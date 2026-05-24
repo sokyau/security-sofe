@@ -359,6 +359,8 @@ function initCartCount() {
   const badge = document.getElementById("header-cart-count");
   if (badge) {
     badge.textContent = count;
+    badge.dataset.count = String(count);
+    badge.setAttribute("aria-label", count === 0 ? "Sin productos en cotización" : `${count} productos en cotización`);
   }
 }
 
@@ -616,8 +618,14 @@ function initCartPage() {
       <div class="empty-cart-state">
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin: 0 auto 1.5rem auto; display:block;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
         <h2 class="empty-title" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main);">Su Lista de Cotización está vacía</h2>
-        <p class="empty-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Explore nuestro catálogo tecnológico y agregue los equipos requeridos para el diseño de su infraestructura.</p>
-        <a href="catalog.html" class="btn btn-primary" style="margin-top: 1.5rem;">Explorar Catálogo Tecnológico</a>
+        <p class="empty-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Empiece por una línea técnica y agregue equipos para estructurar su solicitud.</p>
+        <div class="mobile-start-links" aria-label="Categorías recomendadas">
+          <a href="catalog.html?filter=cctv">CCTV</a>
+          <a href="catalog.html?filter=access-control">Acceso</a>
+          <a href="catalog.html?filter=power">Energía</a>
+          <a href="catalog.html?filter=racks">Racks</a>
+        </div>
+        <a href="catalog.html" class="btn btn-primary" style="margin-top: 0.75rem;">Explorar Catálogo</a>
       </div>
     `;
     return;
