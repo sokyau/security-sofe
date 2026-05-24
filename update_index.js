@@ -1,38 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sofe Security - Soluciones Corporativas de Seguridad e Infraestructura</title>
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
+const fs = require('fs');
+const path = require('path');
 
-  <!-- HEADER NAVEGACIÓN -->
-  <header class="header">
-    <div class="container nav-container">
-      <a href="index.html" class="logo-link">
-        <span class="logo-text" style="font-weight: 700; letter-spacing: 1px;">SOFE GROUP</span>
-      </a>
-      <ul class="nav-menu">
-        <li><a href="index.html" class="nav-link active">Inicio</a></li>
-        <li><a href="categories.html" class="nav-link">Categorías</a></li>
-        <li><a href="catalog.html" class="nav-link">Catálogo</a></li>
-        <li><a href="services.html" class="nav-link">Servicios</a></li>
-        <li><a href="about.html" class="nav-link">Nosotros</a></li>
-        <li><a href="contact.html" class="nav-link">Contacto</a></li>
-      </ul>
-      <div class="nav-actions">
-        <a href="cart.html" class="quote-cart-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-          <span>Cotización</span>
-          <span class="cart-count" id="header-cart-count">0</span>
-        </a>
-      </div>
-    </div>
-  </header>
+let content = fs.readFileSync('index.html', 'utf8');
 
-    <!-- HERO SLIDER -->
+const heroReplacement = `  <!-- HERO SLIDER -->
   <section class="hero-slider-container animate-fade-in">
     <div class="hero-slider" id="heroSlider">
       
@@ -129,68 +100,9 @@
       });
     });
   </script>
+`;
 
-  <!-- FRANJA DE CONFIANZA / AUTORIDAD -->
-  <section class="trust-strip-section">
-    <div class="container trust-strip-container">
-      <div class="trust-item">
-        <span class="trust-number">11</span>
-        <span class="trust-label">Colecciones de Ingeniería</span>
-      </div>
-      <div class="trust-divider"></div>
-      <div class="trust-item">
-        <span class="trust-number">0ms</span>
-        <span class="trust-label">Tiempo Respaldo UPS</span>
-      </div>
-      <div class="trust-divider"></div>
-      <div class="trust-item">
-        <span class="trust-number">B2B</span>
-        <span class="trust-label">Esquema de Cotización</span>
-      </div>
-      <div class="trust-divider"></div>
-      <div class="trust-item">
-        <span class="trust-number">100%</span>
-        <span class="trust-label">Planificación por Proyecto</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- PILARES DE SERVICIO -->
-  <section class="section">
-    <div class="container">
-      <div class="section-header" style="text-align: center; margin: 0 auto 4rem auto;">
-        <span class="section-tag">Diferenciador Enterprise</span>
-        <h2 class="section-title">Ingeniería que trasciende a una cámara individual</h2>
-        <p class="section-desc">No vendemos dispositivos sueltos ni dependemos de alarmismos domésticos. Proveemos el ecosistema completo de hardware, almacenamiento de datos, energía ininterrumpida y soporte corporativo.</p>
-      </div>
-
-      <div class="grid-3">
-        <div class="card">
-          <div class="card-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-          </div>
-          <h3 class="card-title">Respaldo y Continuidad</h3>
-          <p class="card-desc">Sistemas UPS de doble conversión en línea y tableros de distribución de energía inteligentes que garantizan 0ms de tiempo de transferencia durante fallos de red eléctrica.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-          </div>
-          <h3 class="card-title">Almacenamiento Enterprise</h3>
-          <p class="card-desc">Servidores SAN y NAS de alta densidad para grabación continua 24/7 y almacenamiento masivo redundante tolerante a fallos físicos de discos duros.</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><circle cx="12" cy="17" r="2"></circle></svg>
-          </div>
-          <h3 class="card-title">Red de Datos Robusta</h3>
-          <p class="card-desc">Backbones de fibra óptica, cableado estructurado blindado y racks profesionales de comunicaciones para soportar altas tasas de flujo de información sin cuellos de botella.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-    <!-- CATEGORÍAS DESTACADAS -->
+const categoriesReplacement = `  <!-- CATEGORÍAS DESTACADAS -->
   <section class="section">
     <div class="container">
       <div class="section-header">
@@ -242,44 +154,10 @@
       </div>
     </div>
   </section>
+`;
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <a href="index.html" class="logo-link">
-            <div class="logo-icon">S</div>
-            <span class="logo-text">SOFE SECURITY</span>
-          </a>
-          <p class="footer-desc">Soluciones profesionales de videovigilancia, infraestructura de red, respaldo y energía para el sector enterprise corporativo.</p>
-        </div>
-        <div>
-          <h4 class="footer-title">Soluciones</h4>
-          <ul class="footer-links">
-            <li><a href="catalog.html?filter=cctv" class="footer-link">Videovigilancia / CCTV</a></li>
-            <li><a href="catalog.html?filter=storage" class="footer-link">Almacenamiento Enterprise</a></li>
-            <li><a href="catalog.html?filter=vms" class="footer-link">Software VMS y Analíticas</a></li>
-            <li><a href="services.html" class="footer-link">Ingeniería & Diseño</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4 class="footer-title">Compañía</h4>
-          <ul class="footer-links">
-            <li><a href="about.html" class="footer-link">Nosotros</a></li>
-            <li><a href="contact.html" class="footer-link">Contacto</a></li>
-            <li><a href="legal.html" class="footer-link">Legal y Privacidad</a></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; 2026 Sofe Security (Vertical Enterprise de <a href="https://sofe.group" style="color: inherit; text-decoration: underline;">Sofe Group</a>). Todos los derechos reservados. Datos técnicos y certificaciones por confirmar.</p>
-        <p>Suministros Corporativos e Integración B2B</p>
-      </div>
-    </div>
-  </footer>
+content = content.replace(/<!-- HERO SECTION -->[\s\S]*?<!-- FRANJA DE CONFIANZA \/ AUTORIDAD -->/, heroReplacement + '\n  <!-- FRANJA DE CONFIANZA / AUTORIDAD -->');
+content = content.replace(/<!-- ENLACE RÁPIDO COLECCIONES -->[\s\S]*?<!-- FOOTER -->/, categoriesReplacement + '\n  <!-- FOOTER -->');
 
-  <script src="js/products.js"></script>
-  <script src="js/app.js"></script>
-</body>
-</html>
+fs.writeFileSync('index.html', content, 'utf8');
+console.log('index.html updated successfully');
