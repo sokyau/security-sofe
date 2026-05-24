@@ -182,7 +182,42 @@ async function submitQuoteToSupabase(formData) {
   return response.json();
 }
 
+function initMobileMenu() {
+  const toggle = document.querySelector(".mobile-menu-toggle");
+  const menu = document.querySelector(".nav-menu");
+  if (!toggle || !menu) return;
+
+  const closeMenu = () => {
+    toggle.classList.remove("is-open");
+    menu.classList.remove("is-open");
+    document.body.classList.remove("mobile-menu-open");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Abrir menú de navegación");
+  };
+
+  const openMenu = () => {
+    toggle.classList.add("is-open");
+    menu.classList.add("is-open");
+    document.body.classList.add("mobile-menu-open");
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Cerrar menú de navegación");
+  };
+
+  toggle.addEventListener("click", () => {
+    menu.classList.contains("is-open") ? closeMenu() : openMenu();
+  });
+
+  menu.querySelectorAll("a").forEach((link) => link.addEventListener("click", closeMenu));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMenu();
+  });
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 768) closeMenu();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+  initMobileMenu();
   initCartCount();
   await initSofeSupabaseCatalog();
   
