@@ -1,4 +1,4 @@
-// Lógica principal de Sofe Security - Prototipo B2B
+﻿// LÃ³gica principal de Sofe Security - Prototipo B2B
 // Maneja persistencia de cotizaciones en localStorage, interactividad y dinamismo en vistas
 
 let SOFE_REMOTE_PRODUCTS = [];
@@ -30,10 +30,31 @@ function getProductsData() {
 }
 
 function formatCurrencyUSD(value) {
-  if (value === null || value === undefined || value === "") return "Precio por confirmar";
+  if (value === null || value === undefined || value === "") return "Precio sujeto a validaciÃ³n";
   const n = Number(value);
-  if (!Number.isFinite(n)) return "Precio por confirmar";
+  if (!Number.isFinite(n)) return "Precio sujeto a validaciÃ³n";
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(n);
+}
+
+function cleanProductName(name = "", sku = "", brand = "") {
+  let text = String(name || "").replace(/\s+/g, " ").trim();
+  if (!text) return sku || "Equipo de seguridad";
+  text = text
+    .replace(/^SISTEMA\s+/i, "")
+    .replace(/\bPARA\s+SISTEMAS?\b.*$/i, "")
+    .replace(/\bCOMPATIBLE\s+CON\b.*$/i, "")
+    .replace(/\bINCLUYE\b.*$/i, "")
+    .replace(/\s*\/\s*/g, " / ")
+    .trim();
+  const parts = text.split(/\s+-\s+|\s+\|\s+|,\s+/).filter(Boolean);
+  if (parts.length > 1) text = parts.slice(0, 2).join(" ");
+  const words = text.split(" ");
+  if (words.length > 13) text = words.slice(0, 13).join(" ");
+  const brandText = String(brand || "").trim();
+  const skuText = String(sku || "").trim();
+  if (brandText && !text.toLowerCase().includes(brandText.toLowerCase())) text = `${brandText} ${text}`;
+  if (skuText && !text.toLowerCase().includes(skuText.toLowerCase())) text = `${text} ${skuText}`;
+  return text.trim();
 }
 
 function mapCollectionSlug(slug, categoryName = "") {
@@ -68,26 +89,28 @@ function mapCollectionSlug(slug, categoryName = "") {
 }
 
 function normalizeSupabaseProduct(row) {
+  const displayName = cleanProductName(row.name, row.sku, row.brand);
   return {
     id: row.sku,
     collection: mapCollectionSlug(row.collection_slug, row.sofe_category),
     collectionName: row.sofe_category || "Sofe Security",
     name: row.name,
+    displayName,
     sku: row.sku,
     brand: row.brand || "",
-    description: `${row.brand ? row.brand + " · " : ""}Modelo ${row.sku}. Producto disponible para propuesta técnica y cotización B2B.`,
+    description: `${row.brand ? row.brand + " Â· " : ""}Modelo ${row.sku}. Producto disponible para propuesta tÃ©cnica y cotizaciÃ³n B2B.`,
     features: [
-      row.stock !== null && row.stock !== undefined ? `Existencia referencial: ${row.stock}` : "Existencia sujeta a confirmación",
-      row.incoming ? `En camino: ${row.incoming}` : "Disponibilidad sujeta a validación comercial",
-      "Precio publicado con margen comercial Sofe aplicado",
-      "Revisión técnica antes de propuesta final"
+      row.stock !== null && row.stock !== undefined ? `Existencia referencial: ${row.stock}` : "Existencia sujeta a validación",
+      row.incoming ? `En camino: ${row.incoming}` : "Disponibilidad sujeta a validaciÃ³n comercial",
+      "Precio público estimado para solicitud B2B",
+      "RevisiÃ³n tÃ©cnica antes de propuesta final"
     ],
     specifications: {
-      "Marca": row.brand || "Por confirmar",
+      "Marca": row.brand || "Marca no especificada",
       "Modelo / SKU": row.sku,
-      "Categoría": row.sofe_category || "Por confirmar",
-      "Existencia": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Por confirmar",
-      "Precio publicado": formatCurrencyUSD(row.public_price_usd)
+      "CategorÃ­a": row.sofe_category || "Sofe Security",
+      "Existencia": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Sujeta a validación",
+      "Precio público estimado": formatCurrencyUSD(row.public_price_usd)
     },
     image: normalizeImageUrl(row.image_url),
     syscomUrl: row.syscom_url,
@@ -114,8 +137,9 @@ async function initSofeSupabaseCatalog() {
       .sort((a, b) => (COLLECTION_PRIORITY[a.collection] || 50) - (COLLECTION_PRIORITY[b.collection] || 50) || a.name.localeCompare(b.name, 'es'));
     SOFE_CATALOG_READY = true;
   } catch (error) {
-    console.warn("Sofe Security: usando catálogo local de respaldo.", error);
+    console.warn("Sofe Security: usando catÃ¡logo local de respaldo.", error);
   }
+  const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
 }
 
 async function submitQuoteToSupabase(formData) {
@@ -127,7 +151,7 @@ async function submitQuoteToSupabase(formData) {
     p_email: formData.email,
     p_phone: formData.phone,
     p_project_type: formData.projectType,
-    p_urgency: null,
+    p_urgency: formData.urgency || null,
     p_installation_scope: formData.installService ? "installation_required" : "supply_only_or_pending",
     p_message: formData.notes,
     p_source: "sofe-security-website",
@@ -136,7 +160,7 @@ async function submitQuoteToSupabase(formData) {
       product_name: item.name,
       brand: item.brand || null,
       quantity: item.quantity,
-      notes: item.publicPriceUsd ? `Precio publicado web: ${formatCurrencyUSD(item.publicPriceUsd)}` : null
+      notes: item.publicPriceUsd ? `Precio estimado web: ${formatCurrencyUSD(item.publicPriceUsd)}` : null
     }))
   };
   const response = await fetch(`${cfg.url}/rest/v1/rpc/${cfg.quoteRpc || "sofe_security_submit_quote_request"}`, {
@@ -156,7 +180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initCartCount();
   await initSofeSupabaseCatalog();
   
-  // Enrutamiento / Inicialización por página
+  // Enrutamiento / InicializaciÃ³n por pÃ¡gina
   if (document.getElementById("catalog-list")) {
     initCatalog();
   }
@@ -194,7 +218,7 @@ function showToast(message, type = 'success') {
   toast.innerHTML = `${iconSvg} <span>${message}</span>`;
   container.appendChild(toast);
 
-  // Auto-remover después de 3 segundos
+  // Auto-remover despuÃ©s de 3 segundos
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateX(100%)';
@@ -207,7 +231,7 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-/* --- LÓGICA DE CARRITO (LOCALSTORAGE) --- */
+/* --- LÃ“GICA DE CARRITO (LOCALSTORAGE) --- */
 
 function getCart() {
   const cart = localStorage.getItem("sofe_sec_quote_cart");
@@ -231,6 +255,7 @@ function addToCart(productId, quantity = 1, buttonElement = null) {
       cart.push({
         id: product.id,
         name: product.name,
+        displayName: product.displayName || cleanProductName(product.name, product.sku, product.brand),
         sku: product.sku,
         brand: product.brand,
         collectionName: product.collectionName,
@@ -244,11 +269,11 @@ function addToCart(productId, quantity = 1, buttonElement = null) {
   saveCart(cart);
   
   // Feedback Visual
-  showToast("Equipo añadido a la cotización", "success");
+  showToast("Equipo aÃ±adido a la cotizaciÃ³n", "success");
   
   if (buttonElement) {
     const originalText = buttonElement.innerHTML;
-    buttonElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Añadido`;
+    buttonElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> AÃ±adido`;
     buttonElement.classList.add('added-state');
     
     setTimeout(() => {
@@ -263,7 +288,7 @@ function removeFromCart(productId) {
   cart = cart.filter(item => item.id !== productId);
   saveCart(cart);
   
-  // Si estamos en la página del carrito, recargarla
+  // Si estamos en la pÃ¡gina del carrito, recargarla
   if (document.getElementById("cart-container")) {
     initCartPage();
   }
@@ -280,7 +305,7 @@ function updateQuantity(productId, delta) {
     }
     saveCart(cart);
     
-    // Si estamos en la página del carrito, recargarla
+    // Si estamos en la pÃ¡gina del carrito, recargarla
     if (document.getElementById("cart-container")) {
       initCartPage();
     }
@@ -296,9 +321,9 @@ function initCartCount() {
   }
 }
 
-/* --- VISTA: CATÁLOGO --- */
+/* --- VISTA: CATÃLOGO --- */
 
-// Variables globales para la vista del catálogo
+// Variables globales para la vista del catÃ¡logo
 let currentFilter = "all";
 let currentSearchQuery = "";
 
@@ -306,7 +331,7 @@ function initCatalog() {
   const filterButtons = document.querySelectorAll(".filter-btn");
   const searchInput = document.getElementById("catalog-search");
   
-  // Leer parámetros de la URL (si viene de la homepage)
+  // Leer parÃ¡metros de la URL (si viene de la homepage)
   const params = new URLSearchParams(window.location.search);
   const categoryParam = params.get("category") || params.get("filter");
   if (categoryParam) {
@@ -341,7 +366,7 @@ function initCatalog() {
     });
   });
   
-  // Listener de búsqueda
+  // Listener de bÃºsqueda
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
       currentSearchQuery = e.target.value.toLowerCase().trim();
@@ -357,13 +382,15 @@ function renderCatalog() {
   
   catalogList.innerHTML = "";
   
-  // Aplicar filtro de categoría y búsqueda simultáneamente
+  // Aplicar filtro de categorÃ­a y bÃºsqueda simultÃ¡neamente
   const filteredProducts = getProductsData().filter(p => {
     const matchesFilter = currentFilter === "all" || p.collection === currentFilter;
     const matchesSearch = currentSearchQuery === "" || 
                           p.name.toLowerCase().includes(currentSearchQuery) || 
+                          (p.displayName || "").toLowerCase().includes(currentSearchQuery) ||
                           p.sku.toLowerCase().includes(currentSearchQuery) ||
-                          (p.brand || "").toLowerCase().includes(currentSearchQuery);
+                          (p.brand || "").toLowerCase().includes(currentSearchQuery) ||
+                          (p.collectionName || "").toLowerCase().includes(currentSearchQuery);
     return matchesFilter && matchesSearch;
   });
   const productsToRender = filteredProducts.slice(0, visibleCatalogCount);
@@ -373,7 +400,7 @@ function renderCatalog() {
       <div class="empty-cart-state" style="grid-column: 1 / -1;">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin: 0 auto 1rem auto; display:block;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <h3 style="font-family: var(--font-title); font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-main);">No se encontraron resultados</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">No hay equipos que coincidan con su búsqueda o filtro actual.</p>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">No hay equipos que coincidan con su bÃºsqueda o filtro actual.</p>
       </div>`;
     return;
   }
@@ -381,10 +408,11 @@ function renderCatalog() {
   productsToRender.forEach(product => {
     const card = document.createElement("div");
     card.className = "product-card";
+    const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
     
     // SVG Fallback premium
     const imgHtml = product.image && !product.image.includes("placeholder") 
-      ? `<img class="product-img" src="${product.image}" alt="${product.name}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'500\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-family=\\'sans-serif\\' font-size=\\'40\\' fill=\\'%231d1d1f\\' opacity=\\'0.2\\'>SOFE SECURITY</text></svg>'">`
+      ? `<img class="product-img" src="${product.image}" alt="${displayName}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'500\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-family=\\'sans-serif\\' font-size=\\'40\\' fill=\\'%231d1d1f\\' opacity=\\'0.2\\'>SOFE SECURITY</text></svg>'">`
       : `<svg class="fallback-icon" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="19" x2="12" y2="19.01"></line></svg>`;
 
     card.innerHTML = `
@@ -393,21 +421,21 @@ function renderCatalog() {
       </div>
       <div class="product-info">
         <span class="product-collection-badge">${product.collectionName}</span>
-        <h3 class="product-name">${product.name}</h3>
-        <span class="product-sku">SKU: ${product.sku}</span>
+        <h3 class="product-name" title="${product.name}">${displayName}</h3>
+        <span class="product-sku">${product.brand ? product.brand + " · " : ""}SKU: ${product.sku}</span>
         <p class="product-desc-short">${product.description}</p>
         <div class="product-price-line">
           <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
-          <small>precio publicado +25% · sujeto a confirmación</small>
+          <small>Precio público estimado · sujeto a validación técnica y comercial</small>
         </div>
         <div class="product-card-actions">
-          <a href="product.html?id=${product.id}" class="btn btn-secondary btn-sm" style="flex: 0 0 auto; width: 45%; padding: 8px 12px; font-size: 0.75rem;">Ver Ficha</a>
-          <button class="btn btn-primary btn-sm btn-add-quote" data-id="${product.id}" style="flex: 1;">+ Cotizar</button>
+          <a href="product.html?id=${product.id}" class="btn btn-secondary btn-sm" style="flex: 0 0 auto; width: 45%; padding: 8px 12px; font-size: 0.75rem;">Ver detalle</a>
+          <button class="btn btn-primary btn-sm btn-add-quote" data-id="${product.id}" style="flex: 1;">Agregar a cotización</button>
         </div>
       </div>
     `;
     
-    // Asignar click para añadir a cotización
+    // Asignar click para aÃ±adir a cotizaciÃ³n
     card.querySelector(".btn-add-quote").addEventListener("click", (e) => {
       const id = e.currentTarget.getAttribute("data-id");
       addToCart(id, 1, e.currentTarget);
@@ -421,7 +449,7 @@ function renderCatalog() {
     loadMore.className = "catalog-load-more";
     loadMore.style.gridColumn = "1 / -1";
     loadMore.innerHTML = `
-      <button class="btn btn-secondary" type="button">Ver más productos (${filteredProducts.length - productsToRender.length} restantes)</button>
+      <button class="btn btn-secondary" type="button">Ver mÃ¡s productos (${filteredProducts.length - productsToRender.length} restantes)</button>
     `;
     loadMore.querySelector("button").addEventListener("click", () => {
       visibleCatalogCount += CATALOG_PAGE_SIZE;
@@ -446,14 +474,14 @@ function initProductDetail() {
     container.innerHTML = `
       <div class="empty-cart-state">
         <h2 class="empty-title">Producto No Encontrado</h2>
-        <p class="empty-desc">El equipo solicitado no existe en nuestro catálogo de ingeniería.</p>
-        <a href="catalog.html" class="btn btn-primary">Volver al Catálogo</a>
+        <p class="empty-desc">El equipo solicitado no existe en nuestro catÃ¡logo de ingenierÃ­a.</p>
+        <a href="catalog.html" class="btn btn-primary">Volver al CatÃ¡logo</a>
       </div>
     `;
     return;
   }
   
-  // Generar especificaciones técnicas
+  // Generar especificaciones tÃ©cnicas
   let specRows = "";
   for (const [key, value] of Object.entries(product.specifications)) {
     specRows += `
@@ -464,7 +492,7 @@ function initProductDetail() {
     `;
   }
   
-  // Generar características viñetas
+  // Generar caracterÃ­sticas viÃ±etas
   let featureList = "";
   product.features.forEach(f => {
     featureList += `<li style="margin-bottom: 0.5rem; display: flex; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>${f}</span></li>`;
@@ -472,7 +500,7 @@ function initProductDetail() {
   
   // Fallback image
   const imgHtml = product.image && !product.image.includes("placeholder")
-    ? `<img class="detail-img" src="${product.image}" alt="${product.name}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'600\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/></svg>'">`
+    ? `<img class="detail-img" src="${product.image}" alt="${displayName}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'600\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/></svg>'">`
     : `<svg class="detail-fallback-icon" xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="19" x2="12" y2="19.01"></line></svg>`;
 
   container.innerHTML = `
@@ -482,32 +510,32 @@ function initProductDetail() {
       </div>
       <div class="detail-info">
         <span class="detail-collection">${product.collectionName}</span>
-        <h1 class="detail-title">${product.name}</h1>
-        <span class="detail-sku">SKU Identificador: ${product.sku}</span>
+        <h1 class="detail-title">${displayName}</h1>
+        <span class="detail-sku">${product.brand ? product.brand + " · " : ""}SKU: ${product.sku}</span>
         <div class="detail-price-line">
           <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
-          <small>Precio publicado con margen comercial Sofe aplicado. La propuesta final puede variar por volumen, instalación y disponibilidad.</small>
+          <small>Precio público estimado. Sujeto a validación técnica, disponibilidad, volumen e instalación.</small>
         </div>
         <p class="detail-desc">${product.description}</p>
+        <div class="detail-actions" style="margin-bottom: 2.5rem;">
+          <button id="detail-add-btn" class="btn btn-primary" style="flex: 2;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Agregar a cotización</button>
+          <a href="quote.html" class="btn btn-secondary" style="flex: 1;">Solicitar validación</a>
+        </div>
         
         <div class="spec-list">
-          <h3 class="spec-title">Características del Suministro</h3>
+          <h3 class="spec-title">CaracterÃ­sticas del Suministro</h3>
           <ul style="list-style:none; padding-left:0; margin-bottom: 2.5rem; color: var(--text-muted); font-size: 0.95rem;">
             ${featureList}
           </ul>
           
-          <h3 class="spec-title">Ficha Técnica Operativa</h3>
+          <h3 class="spec-title">Ficha TÃ©cnica Operativa</h3>
           <table class="spec-table">
             <tbody>
               ${specRows}
             </tbody>
           </table>
         </div>
-        
-        <div class="detail-actions">
-          <button id="detail-add-btn" class="btn btn-primary" style="flex: 2;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Añadir a Cotización</button>
-          <a href="catalog.html" class="btn btn-secondary" style="flex: 1;">Volver</a>
-        </div>
+        <a href="catalog.html" class="btn btn-secondary">Volver al catálogo</a>
       </div>
     </div>
   `;
@@ -517,7 +545,7 @@ function initProductDetail() {
   });
 }
 
-/* --- VISTA: CARRITO DE COTIZACIÓN --- */
+/* --- VISTA: CARRITO DE COTIZACIÃ“N --- */
 
 function initCartPage() {
   const container = document.getElementById("cart-container");
@@ -529,18 +557,22 @@ function initCartPage() {
     container.innerHTML = `
       <div class="empty-cart-state">
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin: 0 auto 1.5rem auto; display:block;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-        <h2 class="empty-title" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main);">Su Lista de Cotización está vacía</h2>
-        <p class="empty-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Explore nuestro catálogo tecnológico y agregue los equipos requeridos para el diseño de su infraestructura.</p>
-        <a href="catalog.html" class="btn btn-primary" style="margin-top: 1.5rem;">Explorar Catálogo Tecnológico</a>
+        <h2 class="empty-title" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main);">Su Lista de CotizaciÃ³n estÃ¡ vacÃ­a</h2>
+        <p class="empty-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Explore nuestro catÃ¡logo tecnolÃ³gico y agregue los equipos requeridos para el diseÃ±o de su infraestructura.</p>
+        <a href="catalog.html" class="btn btn-primary" style="margin-top: 1.5rem;">Explorar CatÃ¡logo TecnolÃ³gico</a>
       </div>
     `;
     return;
   }
   
   let tableRows = "";
+  let subtotal = 0;
   cart.forEach(item => {
+    const displayName = item.displayName || cleanProductName(item.name, item.sku, item.brand);
+    const lineTotal = Number(item.publicPriceUsd) * item.quantity;
+    if (Number.isFinite(lineTotal)) subtotal += lineTotal;
     const imgHtml = item.image && !item.image.includes("placeholder") 
-      ? `<img class="cart-item-img" src="${item.image}" alt="${item.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\' fill=\\'%23f5f5f7\\'></svg>'">`
+      ? `<img class="cart-item-img" src="${item.image}" alt="${displayName}" loading="lazy" decoding="async" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\' fill=\\'%23f5f5f7\\'></svg>'">`
       : `<div class="cart-item-img"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect></svg></div>`;
 
     tableRows += `
@@ -550,19 +582,19 @@ function initCartPage() {
             ${imgHtml}
             <div>
               <span style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; font-weight:600; display:block; letter-spacing:0.05em;">${item.collectionName}</span>
-              <span class="cart-item-name"><a href="product.html?id=${item.id}">${item.name}</a></span>
-              <span class="cart-item-sku" style="display:block;">SKU: ${item.sku}</span>
+              <span class="cart-item-name"><a href="product.html?id=${item.id}" title="${item.name}">${displayName}</a></span>
+              <span class="cart-item-sku" style="display:block;">${item.brand ? item.brand + " · " : ""}SKU: ${item.sku}</span>
               <span class="cart-item-sku" style="display:block; color: var(--text-main); font-weight:600;">${formatCurrencyUSD(item.publicPriceUsd)}</span>
             </div>
           </div>
         </td>
         <td>
           <div class="cart-qty-box">
-            <button class="qty-btn qty-minus" data-id="${item.id}">
+            <button class="qty-btn qty-minus" data-id="${item.id}" aria-label="Reducir unidades">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
             <span class="qty-input">${item.quantity}</span>
-            <button class="qty-btn qty-plus" data-id="${item.id}">
+            <button class="qty-btn qty-plus" data-id="${item.id}" aria-label="Aumentar unidades">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
           </div>
@@ -585,7 +617,7 @@ function initCartPage() {
         <table class="cart-items-table">
           <thead>
             <tr>
-              <th style="width: 60%;">Concepto Tecnológico / Equipo</th>
+              <th style="width: 60%;">Concepto TecnolÃ³gico / Equipo</th>
               <th style="width: 25%;">Unidades</th>
               <th style="width: 15%; text-align: right;">Acciones</th>
             </tr>
@@ -598,8 +630,8 @@ function initCartPage() {
         <div style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: var(--border-radius); display: flex; gap: 1rem; align-items: flex-start;">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           <div>
-            <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.25rem; font-weight: 600;">Aviso de Cotización</h4>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios publicados ya incluyen el margen comercial Sofe (+25%) y la disponibilidad de inventario está sujeta a evaluación del proyecto por parte de nuestros ingenieros comerciales. Se confirmarán en la propuesta técnica final.</p>
+            <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.25rem; font-weight: 600;">Aviso de CotizaciÃ³n</h4>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios mostrados son estimaciones públicas para orientar la solicitud. La propuesta final se valida según disponibilidad, volumen, alcance de instalación y condiciones del proyecto.</p>
           </div>
         </div>
       </div>
@@ -615,20 +647,24 @@ function initCartPage() {
           <span>${totalItems}</span>
         </div>
         <div class="summary-row">
+          <span>Subtotal referencial:</span>
+          <span>${subtotal > 0 ? formatCurrencyUSD(subtotal) : "Sujeto a validación"}</span>
+        </div>
+        <div class="summary-row">
           <span>Modelo de Negocio:</span>
           <span style="color: var(--text-main); font-weight:500; font-size:0.8rem; border: 1px solid var(--border-subtle); padding: 2px 6px; border-radius: 4px; background: var(--bg-card);">B2B Enterprise</span>
         </div>
         <div class="summary-row summary-total">
           <span>Estado del Requerimiento:</span>
-          <span style="font-size: 0.85rem; color: #34c759; display:flex; align-items:center; gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Listo para envío</span>
+          <span style="font-size: 0.85rem; color: #34c759; display:flex; align-items:center; gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Listo para envÃ­o</span>
         </div>
         
         <div class="summary-actions">
           <a href="quote.html" class="btn btn-primary" style="justify-content: center;">
-            Continuar con Datos de Proyecto 
+            Enviar solicitud de cotización
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
           </a>
-          <a href="catalog.html" class="btn btn-secondary" style="justify-content: center;">Añadir más Componentes</a>
+          <a href="catalog.html" class="btn btn-secondary" style="justify-content: center;">Agregar más componentes</a>
         </div>
       </div>
     </div>
@@ -657,7 +693,7 @@ function initCartPage() {
   });
 }
 
-/* --- VISTA: FORMULARIO DE COTIZACIÓN B2B --- */
+/* --- VISTA: FORMULARIO DE COTIZACIÃ“N B2B --- */
 
 function initQuoteForm() {
   const form = document.getElementById("quote-form-element");
@@ -673,6 +709,7 @@ function initQuoteForm() {
   // Renderizar resumen en el formulario
   itemsContainer.innerHTML = "";
   cart.forEach(item => {
+    const displayName = item.displayName || cleanProductName(item.name, item.sku, item.brand);
     const li = document.createElement("li");
     li.style.display = "flex";
     li.style.justifyContent = "space-between";
@@ -683,8 +720,8 @@ function initQuoteForm() {
     li.style.paddingBottom = "0.75rem";
     li.innerHTML = `
       <div style="flex:1;">
-        <span style="font-weight:500; display:block; color: var(--text-main);">${item.name}</span>
-        <span style="font-size:0.75rem; color:var(--text-muted); font-family: var(--font-body);">SKU: ${item.sku}</span>
+        <span style="font-weight:500; display:block; color: var(--text-main);" title="${item.name}">${displayName}</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); font-family: var(--font-body);">${item.brand ? item.brand + " · " : ""}SKU: ${item.sku}</span>
         <span style="font-size:0.75rem; color:var(--text-main); font-weight:600; display:block; margin-top:2px;">${formatCurrencyUSD(item.publicPriceUsd)}</span>
       </div>
       <div style="margin-left: 20px; font-weight:600; color:var(--text-main); background: var(--bg-deep); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
@@ -697,7 +734,7 @@ function initQuoteForm() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    // Simular estado de carga en el botón
+    // Simular estado de carga en el botÃ³n
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.innerHTML = `<svg class="data-pulse-1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg> Procesando Solicitud...`;
@@ -707,12 +744,17 @@ function initQuoteForm() {
     // Captura de datos
     const formData = {
       projectType: document.getElementById("project_type").value,
+      urgency: document.getElementById("urgency")?.value || null,
       installService: document.getElementById("install_service").checked,
       company: document.getElementById("company").value,
       contactName: document.getElementById("contact_name").value,
       email: document.getElementById("email").value,
       phone: document.getElementById("phone").value,
-      notes: document.getElementById("notes").value,
+      notes: [
+        document.getElementById("notes").value,
+        document.getElementById("site_type")?.value ? `Tipo de sitio: ${document.getElementById("site_type").value}` : "",
+        document.getElementById("location")?.value ? `Ubicación: ${document.getElementById("location").value}` : ""
+      ].filter(Boolean).join("\n"),
       items: cart
     };
     
@@ -722,8 +764,8 @@ function initQuoteForm() {
       localStorage.removeItem("sofe_sec_quote_cart");
       window.location.href = "quote-success.html";
     } catch (error) {
-      console.error("Error enviando cotización a Supabase:", error);
-      showToast("No pudimos enviar la solicitud. Intente de nuevo o contáctenos por WhatsApp.", "error");
+      console.error("Error enviando cotizaciÃ³n a Supabase:", error);
+      showToast("No pudimos enviar la solicitud. Intente de nuevo o contÃ¡ctenos por WhatsApp.", "error");
       submitBtn.innerHTML = originalBtnText;
       submitBtn.disabled = false;
       submitBtn.style.opacity = "1";
