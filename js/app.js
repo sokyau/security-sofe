@@ -1,4 +1,4 @@
-// LÃ³gica principal de Sofe Security - Prototipo B2B
+// Lógica principal de Sofe Security - Prototipo B2B
 // Maneja persistencia de cotizaciones en localStorage, interactividad y dinamismo en vistas
 
 let SOFE_REMOTE_PRODUCTS = [];
@@ -30,9 +30,9 @@ function getProductsData() {
 }
 
 function formatCurrencyUSD(value) {
-  if (value === null || value === undefined || value === "") return "Precio sujeto a validaciÃ³n";
+  if (value === null || value === undefined || value === "") return "Precio sujeto a validación";
   const n = Number(value);
-  if (!Number.isFinite(n)) return "Precio sujeto a validaciÃ³n";
+  if (!Number.isFinite(n)) return "Precio sujeto a validación";
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(n);
 }
 
@@ -105,17 +105,17 @@ function normalizeSupabaseProduct(row) {
     displayName,
     sku: row.sku,
     brand: row.brand || "",
-    description: `${row.brand ? row.brand + " Â· " : ""}Modelo ${row.sku}. Producto disponible para propuesta tÃ©cnica y cotizaciÃ³n B2B.`,
+    description: `${row.brand ? row.brand + " · " : ""}Modelo ${row.sku}. Producto disponible para propuesta técnica y cotización B2B.`,
     features: [
       row.stock !== null && row.stock !== undefined ? `Existencia referencial: ${row.stock}` : "Existencia sujeta a validación",
-      row.incoming ? `En camino: ${row.incoming}` : "Disponibilidad sujeta a validaciÃ³n comercial",
+      row.incoming ? `En camino: ${row.incoming}` : "Disponibilidad sujeta a validación comercial",
       "Precio público estimado para solicitud B2B",
-      "RevisiÃ³n tÃ©cnica antes de propuesta final"
+      "Revisión técnica antes de propuesta final"
     ],
     specifications: {
       "Marca": row.brand || "Marca no especificada",
       "Modelo / SKU": row.sku,
-      "CategorÃ­a": row.sofe_category || "Sofe Security",
+      "Categoría": row.sofe_category || "Sofe Security",
       "Existencia": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Sujeta a validación",
       "Precio público estimado": formatCurrencyUSD(row.public_price_usd)
     },
@@ -144,7 +144,7 @@ async function initSofeSupabaseCatalog() {
       .sort((a, b) => (COLLECTION_PRIORITY[a.collection] || 50) - (COLLECTION_PRIORITY[b.collection] || 50) || a.name.localeCompare(b.name, 'es'));
     SOFE_CATALOG_READY = true;
   } catch (error) {
-    console.warn("Sofe Security: usando catÃ¡logo local de respaldo.", error);
+    console.warn("Sofe Security: usando catálogo local de respaldo.", error);
   }
 }
 
@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initCartCount();
   await initSofeSupabaseCatalog();
   
-  // Enrutamiento / InicializaciÃ³n por pÃ¡gina
+  // Enrutamiento / Inicialización por página
   if (document.getElementById("catalog-list")) {
     initCatalog();
   }
@@ -224,7 +224,7 @@ function showToast(message, type = 'success') {
   toast.innerHTML = `${iconSvg} <span>${message}</span>`;
   container.appendChild(toast);
 
-  // Auto-remover despuÃ©s de 3 segundos
+  // Auto-remover después de 3 segundos
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transform = 'translateX(100%)';
@@ -237,7 +237,7 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-/* --- LÃ“GICA DE CARRITO (LOCALSTORAGE) --- */
+/* --- LÓGICA DE CARRITO (LOCALSTORAGE) --- */
 
 function getCart() {
   const cart = localStorage.getItem("sofe_sec_quote_cart");
@@ -275,11 +275,11 @@ function addToCart(productId, quantity = 1, buttonElement = null) {
   saveCart(cart);
   
   // Feedback Visual
-  showToast("Equipo aÃ±adido a la cotizaciÃ³n", "success");
+  showToast("Equipo añadido a la cotización", "success");
   
   if (buttonElement) {
     const originalText = buttonElement.innerHTML;
-    buttonElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> AÃ±adido`;
+    buttonElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Añadido`;
     buttonElement.classList.add('added-state');
     
     setTimeout(() => {
@@ -294,7 +294,7 @@ function removeFromCart(productId) {
   cart = cart.filter(item => item.id !== productId);
   saveCart(cart);
   
-  // Si estamos en la pÃ¡gina del carrito, recargarla
+  // Si estamos en la página del carrito, recargarla
   if (document.getElementById("cart-container")) {
     initCartPage();
   }
@@ -311,7 +311,7 @@ function updateQuantity(productId, delta) {
     }
     saveCart(cart);
     
-    // Si estamos en la pÃ¡gina del carrito, recargarla
+    // Si estamos en la página del carrito, recargarla
     if (document.getElementById("cart-container")) {
       initCartPage();
     }
@@ -327,9 +327,9 @@ function initCartCount() {
   }
 }
 
-/* --- VISTA: CATÃLOGO --- */
+/* --- VISTA: CATÁLOGO --- */
 
-// Variables globales para la vista del catÃ¡logo
+// Variables globales para la vista del catálogo
 let currentFilter = "all";
 let currentSearchQuery = "";
 
@@ -337,7 +337,7 @@ function initCatalog() {
   const filterButtons = document.querySelectorAll(".filter-btn");
   const searchInput = document.getElementById("catalog-search");
   
-  // Leer parÃ¡metros de la URL (si viene de la homepage)
+  // Leer parámetros de la URL (si viene de la homepage)
   const params = new URLSearchParams(window.location.search);
   const categoryParam = params.get("category") || params.get("filter");
   if (categoryParam) {
@@ -372,7 +372,7 @@ function initCatalog() {
     });
   });
   
-  // Listener de bÃºsqueda
+  // Listener de búsqueda
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
       currentSearchQuery = e.target.value.toLowerCase().trim();
@@ -388,7 +388,7 @@ function renderCatalog() {
   
   catalogList.innerHTML = "";
   
-  // Aplicar filtro de categorÃ­a y bÃºsqueda simultÃ¡neamente
+  // Aplicar filtro de categoría y búsqueda simultáneamente
   const filteredProducts = getProductsData().filter(p => {
     const matchesFilter = currentFilter === "all" || p.collection === currentFilter;
     const matchesSearch = currentSearchQuery === "" || 
@@ -401,12 +401,17 @@ function renderCatalog() {
   });
   const productsToRender = filteredProducts.slice(0, visibleCatalogCount);
     
+  const countEl = document.getElementById("catalog-count");
+  if (countEl) {
+    countEl.innerHTML = `Mostrando <strong>${filteredProducts.length}</strong> ${filteredProducts.length === 1 ? 'producto' : 'productos'}`;
+  }
+
   if (filteredProducts.length === 0) {
     catalogList.innerHTML = `
       <div class="empty-cart-state" style="grid-column: 1 / -1;">
         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin: 0 auto 1rem auto; display:block;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <h3 style="font-family: var(--font-title); font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-main);">No se encontraron resultados</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">No hay equipos que coincidan con su bÃºsqueda o filtro actual.</p>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">No hay equipos que coincidan con su búsqueda o filtro actual.</p>
       </div>`;
     return;
   }
@@ -442,7 +447,7 @@ function renderCatalog() {
       </div>
     `;
     
-    // Asignar click para aÃ±adir a cotizaciÃ³n
+    // Asignar click para añadir a cotización
     card.querySelector(".btn-add-quote").addEventListener("click", (e) => {
       const id = e.currentTarget.getAttribute("data-id");
       addToCart(id, 1, e.currentTarget);
@@ -456,7 +461,7 @@ function renderCatalog() {
     loadMore.className = "catalog-load-more";
     loadMore.style.gridColumn = "1 / -1";
     loadMore.innerHTML = `
-      <button class="btn btn-secondary" type="button">Ver mÃ¡s productos (${filteredProducts.length - productsToRender.length} restantes)</button>
+      <button class="btn btn-secondary" type="button">Ver más productos (${filteredProducts.length - productsToRender.length} restantes)</button>
     `;
     loadMore.querySelector("button").addEventListener("click", () => {
       visibleCatalogCount += CATALOG_PAGE_SIZE;
@@ -481,17 +486,27 @@ function initProductDetail() {
     container.innerHTML = `
       <div class="empty-cart-state">
         <h2 class="empty-title">Producto No Encontrado</h2>
-        <p class="empty-desc">El equipo solicitado no existe en nuestro catÃ¡logo de ingenierÃ­a.</p>
-        <a href="catalog.html" class="btn btn-primary">Volver al CatÃ¡logo</a>
+        <p class="empty-desc">El equipo solicitado no existe en nuestro catálogo de ingeniería.</p>
+        <a href="catalog.html" class="btn btn-primary">Volver al Catálogo</a>
       </div>
     `;
     return;
   }
   const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
   
-  // Generar especificaciones tÃ©cnicas
+  // Generar especificaciones técnicas
   let specRows = "";
-  for (const [key, value] of Object.entries(product.specifications)) {
+  const specs = { ...product.specifications };
+  
+  // Enriquecimiento automático de placeholders comerciales (Prioridad 1)
+  if (!specs["Garantía"] && !specs["Garantía Comercial"] && !specs["Garantía de Fábrica"]) {
+    specs["Soporte y Garantía"] = "Sujeto a póliza SLA por proyecto";
+  }
+  if (!specs["Compatibilidad"]) {
+    specs["Compatibilidad / Estándar"] = "Arquitectura abierta Enterprise / Cumplimiento EIA/TIA";
+  }
+
+  for (const [key, value] of Object.entries(specs)) {
     specRows += `
       <tr>
         <td class="spec-key">${key}</td>
@@ -500,7 +515,7 @@ function initProductDetail() {
     `;
   }
   
-  // Generar caracterÃ­sticas viÃ±etas
+  // Generar características viñetas
   let featureList = "";
   product.features.forEach(f => {
     featureList += `<li style="margin-bottom: 0.5rem; display: flex; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>${f}</span></li>`;
@@ -531,12 +546,12 @@ function initProductDetail() {
         </div>
         
         <div class="spec-list">
-          <h3 class="spec-title">CaracterÃ­sticas del Suministro</h3>
+          <h3 class="spec-title">Características del Suministro</h3>
           <ul style="list-style:none; padding-left:0; margin-bottom: 2.5rem; color: var(--text-muted); font-size: 0.95rem;">
             ${featureList}
           </ul>
           
-          <h3 class="spec-title">Ficha TÃ©cnica Operativa</h3>
+          <h3 class="spec-title">Ficha Técnica Operativa</h3>
           <table class="spec-table">
             <tbody>
               ${specRows}
@@ -553,7 +568,7 @@ function initProductDetail() {
   });
 }
 
-/* --- VISTA: CARRITO DE COTIZACIÃ“N --- */
+/* --- VISTA: CARRITO DE COTIZACIÓN --- */
 
 function initCartPage() {
   const container = document.getElementById("cart-container");
@@ -565,9 +580,9 @@ function initCartPage() {
     container.innerHTML = `
       <div class="empty-cart-state">
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted); margin: 0 auto 1.5rem auto; display:block;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-        <h2 class="empty-title" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main);">Su Lista de CotizaciÃ³n estÃ¡ vacÃ­a</h2>
-        <p class="empty-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Explore nuestro catÃ¡logo tecnolÃ³gico y agregue los equipos requeridos para el diseÃ±o de su infraestructura.</p>
-        <a href="catalog.html" class="btn btn-primary" style="margin-top: 1.5rem;">Explorar CatÃ¡logo TecnolÃ³gico</a>
+        <h2 class="empty-title" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-main);">Su Lista de Cotización está vacía</h2>
+        <p class="empty-desc" style="color: var(--text-muted); margin-bottom: 1.5rem;">Explore nuestro catálogo tecnológico y agregue los equipos requeridos para el diseño de su infraestructura.</p>
+        <a href="catalog.html" class="btn btn-primary" style="margin-top: 1.5rem;">Explorar Catálogo Tecnológico</a>
       </div>
     `;
     return;
@@ -625,7 +640,7 @@ function initCartPage() {
         <table class="cart-items-table">
           <thead>
             <tr>
-              <th style="width: 60%;">Concepto TecnolÃ³gico / Equipo</th>
+              <th style="width: 60%;">Concepto Tecnológico / Equipo</th>
               <th style="width: 25%;">Unidades</th>
               <th style="width: 15%; text-align: right;">Acciones</th>
             </tr>
@@ -638,8 +653,8 @@ function initCartPage() {
         <div style="margin-top: 2rem; padding: 1.5rem; background: var(--bg-deep); border: 1px solid var(--border-subtle); border-radius: var(--border-radius); display: flex; gap: 1rem; align-items: flex-start;">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           <div>
-            <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.25rem; font-weight: 600;">Aviso de CotizaciÃ³n</h4>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios mostrados son estimaciones públicas para orientar la solicitud. La propuesta final se valida según disponibilidad, volumen, alcance de instalación y condiciones del proyecto.</p>
+            <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.25rem; font-weight: 600;">¿Qué ocurre después?</h4>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios mostrados son estimaciones públicas. Un ingeniero evaluará su solicitud en <strong>24-48 horas hábiles</strong>. La propuesta final incluirá validación técnica y disponibilidad. <em>(Instalación y configuración no incluidas por defecto)</em>.</p>
           </div>
         </div>
       </div>
@@ -664,7 +679,7 @@ function initCartPage() {
         </div>
         <div class="summary-row summary-total">
           <span>Estado del Requerimiento:</span>
-          <span style="font-size: 0.85rem; color: #34c759; display:flex; align-items:center; gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Listo para envÃ­o</span>
+          <span style="font-size: 0.85rem; color: #34c759; display:flex; align-items:center; gap:5px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Listo para envío</span>
         </div>
         
         <div class="summary-actions">
@@ -701,7 +716,7 @@ function initCartPage() {
   });
 }
 
-/* --- VISTA: FORMULARIO DE COTIZACIÃ“N B2B --- */
+/* --- VISTA: FORMULARIO DE COTIZACIÓN B2B --- */
 
 function initQuoteForm() {
   const form = document.getElementById("quote-form-element");
@@ -738,11 +753,19 @@ function initQuoteForm() {
     `;
     itemsContainer.appendChild(li);
   });
-  
+  // Custom Form Validation en Español
+  const requiredInputs = form.querySelectorAll("[required]");
+  requiredInputs.forEach(input => {
+    input.addEventListener("invalid", (e) => {
+      e.preventDefault();
+      showToast("Por favor, complete todos los campos obligatorios para continuar.", "error");
+    });
+  });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     
-    // Simular estado de carga en el botÃ³n
+    // Simular estado de carga en el botón
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.innerHTML = `<svg class="data-pulse-1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg> Procesando Solicitud...`;
@@ -772,11 +795,54 @@ function initQuoteForm() {
       localStorage.removeItem("sofe_sec_quote_cart");
       window.location.href = "quote-success.html";
     } catch (error) {
-      console.error("Error enviando cotizaciÃ³n a Supabase:", error);
-      showToast("No pudimos enviar la solicitud. Intente de nuevo o contÃ¡ctenos por WhatsApp.", "error");
+      console.error("Error enviando cotización a Supabase:", error);
+      showToast("No pudimos enviar la solicitud. Intente de nuevo o contáctenos por WhatsApp.", "error");
       submitBtn.innerHTML = originalBtnText;
       submitBtn.disabled = false;
       submitBtn.style.opacity = "1";
     }
+  });
+}
+
+/* --- SCROLL REVEAL ANIMATIONS & FALLBACK --- */
+document.addEventListener("DOMContentLoaded", () => {
+  // Habilitar animaciones solo si JS carga correctamente
+  document.body.classList.add("js-animations-ready");
+
+  const revealElements = document.querySelectorAll(".reveal-up");
+  if (revealElements.length > 0) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      root: null,
+      threshold: 0.1,
+      rootMargin: "0px 0px -50px 0px"
+    });
+    
+    revealElements.forEach(el => observer.observe(el));
+  }
+
+  initSpanishFormValidation();
+});
+
+function initSpanishFormValidation() {
+  const fields = document.querySelectorAll("input[required], select[required], textarea[required]");
+  fields.forEach((field) => {
+    field.addEventListener("invalid", () => {
+      if (field.validity.valueMissing) {
+        field.setCustomValidity(field.type === "checkbox" ? "Debe aceptar el aviso de privacidad para continuar." : "Complete este campo para continuar.");
+      } else if (field.validity.typeMismatch && field.type === "email") {
+        field.setCustomValidity("Ingrese un correo electrónico válido.");
+      } else {
+        field.setCustomValidity("Revise este campo antes de continuar.");
+      }
+    });
+    field.addEventListener("input", () => field.setCustomValidity(""));
+    field.addEventListener("change", () => field.setCustomValidity(""));
   });
 }
