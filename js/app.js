@@ -1,8 +1,137 @@
 // Lógica principal de Sofe Security - Prototipo B2B
 // Maneja persistencia de cotizaciones en localStorage, interactividad y dinamismo en vistas
 
-document.addEventListener("DOMContentLoaded", () => {
+let SOFE_REMOTE_PRODUCTS = [];
+let SOFE_CATALOG_READY = false;
+
+function getProductsData() {
+  return SOFE_REMOTE_PRODUCTS.length ? SOFE_REMOTE_PRODUCTS : PRODUCTS_DATA;
+}
+
+function formatCurrencyUSD(value) {
+  if (value === null || value === undefined || value === "") return "Precio por confirmar";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "Precio por confirmar";
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(n);
+}
+
+function mapCollectionSlug(slug, categoryName = "") {
+  const map = {
+    "videovigilancia-cctv": "cctv",
+    "software-vms-y-anal-ticas": "vms",
+    "almacenamiento-enterprise": "storage",
+    "workstations-servidores": "compute",
+    "energ-a-y-respaldo": "power",
+    "distribuci-n-el-ctrica-y-puesta-a-tierra": "distribution",
+    "racks-gabinetes-y-organizaci-n": "racks",
+    "fibra-ptica": "fiber",
+    "cableado-estructurado-cobre": "cabling",
+    "pantallas-profesionales-videowalls": "displays",
+    "control-de-acceso-e-interfon-a": "access-control",
+    "accesorios-y-consumibles": "accessories"
+  };
+  if (map[slug]) return map[slug];
+  const c = (categoryName || "").toLowerCase();
+  if (c.includes("cctv") || c.includes("videovigilancia")) return "cctv";
+  if (c.includes("vms") || c.includes("anal")) return "vms";
+  if (c.includes("almacen")) return "storage";
+  if (c.includes("servid") || c.includes("workstation")) return "compute";
+  if (c.includes("energ") || c.includes("ups")) return "power";
+  if (c.includes("distribuci")) return "distribution";
+  if (c.includes("rack")) return "racks";
+  if (c.includes("fibra")) return "fiber";
+  if (c.includes("cableado") || c.includes("cobre")) return "cabling";
+  if (c.includes("pantalla") || c.includes("videowall")) return "displays";
+  if (c.includes("acceso") || c.includes("interfon")) return "access-control";
+  return "accessories";
+}
+
+function normalizeSupabaseProduct(row) {
+  return {
+    id: row.sku,
+    collection: mapCollectionSlug(row.collection_slug, row.sofe_category),
+    collectionName: row.sofe_category || "Sofe Security",
+    name: row.name,
+    sku: row.sku,
+    brand: row.brand || "",
+    description: `${row.brand ? row.brand + " · " : ""}Modelo ${row.sku}. Producto disponible para propuesta técnica y cotización B2B.`,
+    features: [
+      row.stock !== null && row.stock !== undefined ? `Existencia referencial: ${row.stock}` : "Existencia sujeta a confirmación",
+      row.incoming ? `En camino: ${row.incoming}` : "Disponibilidad sujeta a validación comercial",
+      "Precio publicado con margen comercial Sofe aplicado",
+      "Revisión técnica antes de propuesta final"
+    ],
+    specifications: {
+      "Marca": row.brand || "Por confirmar",
+      "Modelo / SKU": row.sku,
+      "Categoría": row.sofe_category || "Por confirmar",
+      "Existencia": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Por confirmar",
+      "Precio publicado": formatCurrencyUSD(row.public_price_usd)
+    },
+    image: row.image_url,
+    syscomUrl: row.syscom_url,
+    publicPriceUsd: row.public_price_usd
+  };
+}
+
+async function initSofeSupabaseCatalog() {
+  const cfg = window.SOFE_SUPABASE_CONFIG;
+  if (!cfg?.url || !cfg?.anonKey || SOFE_CATALOG_READY) return;
+  try {
+    const select = "sku,brand,name,sofe_category,collection_slug,stock,incoming,image_url,syscom_url,public_price_usd";
+    const endpoint = `${cfg.url}/rest/v1/${cfg.catalogView || "sofe_security_catalog_launch"}?select=${select}&order=sofe_category.asc,name.asc&limit=500`;
+    const response = await fetch(endpoint, {
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: `Bearer ${cfg.anonKey}`
+      }
+    });
+    if (!response.ok) throw new Error(`Supabase catalog HTTP ${response.status}`);
+    const rows = await response.json();
+    SOFE_REMOTE_PRODUCTS = rows.map(normalizeSupabaseProduct);
+    SOFE_CATALOG_READY = true;
+  } catch (error) {
+    console.warn("Sofe Security: usando catálogo local de respaldo.", error);
+  }
+}
+
+async function submitQuoteToSupabase(formData) {
+  const cfg = window.SOFE_SUPABASE_CONFIG;
+  if (!cfg?.url || !cfg?.anonKey) throw new Error("Supabase config missing");
+  const payload = {
+    p_full_name: formData.contactName,
+    p_company: formData.company,
+    p_email: formData.email,
+    p_phone: formData.phone,
+    p_project_type: formData.projectType,
+    p_urgency: null,
+    p_installation_scope: formData.installService ? "installation_required" : "supply_only_or_pending",
+    p_message: formData.notes,
+    p_source: "sofe-security-website",
+    p_items: formData.items.map(item => ({
+      product_sku: item.sku,
+      product_name: item.name,
+      brand: item.brand || null,
+      quantity: item.quantity,
+      notes: item.publicPriceUsd ? `Precio publicado web: ${formatCurrencyUSD(item.publicPriceUsd)}` : null
+    }))
+  };
+  const response = await fetch(`${cfg.url}/rest/v1/rpc/${cfg.quoteRpc || "sofe_security_submit_quote_request"}`, {
+    method: "POST",
+    headers: {
+      apikey: cfg.anonKey,
+      Authorization: `Bearer ${cfg.anonKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) throw new Error(`Quote RPC HTTP ${response.status}`);
+  return response.json();
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   initCartCount();
+  await initSofeSupabaseCatalog();
   
   // Enrutamiento / Inicialización por página
   if (document.getElementById("catalog-list")) {
@@ -74,14 +203,16 @@ function addToCart(productId, quantity = 1, buttonElement = null) {
   if (existingItemIndex > -1) {
     cart[existingItemIndex].quantity += quantity;
   } else {
-    const product = PRODUCTS_DATA.find(p => p.id === productId);
+    const product = getProductsData().find(p => p.id === productId);
     if (product) {
       cart.push({
         id: product.id,
         name: product.name,
         sku: product.sku,
+        brand: product.brand,
         collectionName: product.collectionName,
         image: product.image,
+        publicPriceUsd: product.publicPriceUsd,
         quantity: quantity
       });
     }
@@ -154,7 +285,7 @@ function initCatalog() {
   
   // Leer parámetros de la URL (si viene de la homepage)
   const params = new URLSearchParams(window.location.search);
-  const categoryParam = params.get("category");
+  const categoryParam = params.get("category") || params.get("filter");
   if (categoryParam) {
     currentFilter = categoryParam;
     
@@ -202,7 +333,7 @@ function renderCatalog() {
   catalogList.innerHTML = "";
   
   // Aplicar filtro de categoría y búsqueda simultáneamente
-  const filteredProducts = PRODUCTS_DATA.filter(p => {
+  const filteredProducts = getProductsData().filter(p => {
     const matchesFilter = currentFilter === "all" || p.collection === currentFilter;
     const matchesSearch = currentSearchQuery === "" || 
                           p.name.toLowerCase().includes(currentSearchQuery) || 
@@ -238,6 +369,10 @@ function renderCatalog() {
         <h3 class="product-name">${product.name}</h3>
         <span class="product-sku">SKU: ${product.sku}</span>
         <p class="product-desc-short">${product.description}</p>
+        <div class="product-price-line">
+          <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
+          <small>precio publicado +25% · sujeto a confirmación</small>
+        </div>
         <div class="product-card-actions">
           <a href="product.html?id=${product.id}" class="btn btn-secondary btn-sm" style="flex: 0 0 auto; width: 45%; padding: 8px 12px; font-size: 0.75rem;">Ver Ficha</a>
           <button class="btn btn-primary btn-sm btn-add-quote" data-id="${product.id}" style="flex: 1;">+ Cotizar</button>
@@ -264,7 +399,7 @@ function initProductDetail() {
   
   if (!container) return;
   
-  const product = PRODUCTS_DATA.find(p => p.id === productId);
+  const product = getProductsData().find(p => p.id === productId);
   
   if (!product) {
     container.innerHTML = `
@@ -308,6 +443,10 @@ function initProductDetail() {
         <span class="detail-collection">${product.collectionName}</span>
         <h1 class="detail-title">${product.name}</h1>
         <span class="detail-sku">SKU Identificador: ${product.sku}</span>
+        <div class="detail-price-line">
+          <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
+          <small>Precio publicado con margen comercial Sofe aplicado. La propuesta final puede variar por volumen, instalación y disponibilidad.</small>
+        </div>
         <p class="detail-desc">${product.description}</p>
         
         <div class="spec-list">
@@ -372,6 +511,7 @@ function initCartPage() {
               <span style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; font-weight:600; display:block; letter-spacing:0.05em;">${item.collectionName}</span>
               <span class="cart-item-name"><a href="product.html?id=${item.id}">${item.name}</a></span>
               <span class="cart-item-sku" style="display:block;">SKU: ${item.sku}</span>
+              <span class="cart-item-sku" style="display:block; color: var(--text-main); font-weight:600;">${formatCurrencyUSD(item.publicPriceUsd)}</span>
             </div>
           </div>
         </td>
@@ -418,7 +558,7 @@ function initCartPage() {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           <div>
             <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.25rem; font-weight: 600;">Aviso de Cotización</h4>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios y la disponibilidad de inventario están sujetos a evaluación del proyecto por parte de nuestros ingenieros comerciales. Se confirmarán en la propuesta técnica final.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios publicados ya incluyen el margen comercial Sofe (+25%) y la disponibilidad de inventario está sujeta a evaluación del proyecto por parte de nuestros ingenieros comerciales. Se confirmarán en la propuesta técnica final.</p>
           </div>
         </div>
       </div>
@@ -504,6 +644,7 @@ function initQuoteForm() {
       <div style="flex:1;">
         <span style="font-weight:500; display:block; color: var(--text-main);">${item.name}</span>
         <span style="font-size:0.75rem; color:var(--text-muted); font-family: var(--font-body);">SKU: ${item.sku}</span>
+        <span style="font-size:0.75rem; color:var(--text-main); font-weight:600; display:block; margin-top:2px;">${formatCurrencyUSD(item.publicPriceUsd)}</span>
       </div>
       <div style="margin-left: 20px; font-weight:600; color:var(--text-main); background: var(--bg-deep); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
         x${item.quantity}
@@ -512,7 +653,7 @@ function initQuoteForm() {
     itemsContainer.appendChild(li);
   });
   
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     // Simular estado de carga en el botón
@@ -534,17 +675,17 @@ function initQuoteForm() {
       items: cart
     };
     
-    // Simulación de envío al backend (Supabase / n8n) tras 1 segundo
-    setTimeout(() => {
-      console.log("--- SIMULACIÓN DE COTIZACIÓN ENVIADA A BACKEND (Supabase/n8n) ---");
-      console.log("Datos de Proyecto y Contacto:", formData);
-      console.log("-----------------------------------------------------------------");
-      
-      // Limpiar carrito
+    try {
+      const quoteId = await submitQuoteToSupabase(formData);
+      sessionStorage.setItem("sofe_security_last_quote_id", String(quoteId));
       localStorage.removeItem("sofe_sec_quote_cart");
-      
-      // Redirigir a pantalla de éxito
       window.location.href = "quote-success.html";
-    }, 1200);
+    } catch (error) {
+      console.error("Error enviando cotización a Supabase:", error);
+      showToast("No pudimos enviar la solicitud. Intente de nuevo o contáctenos por WhatsApp.", "error");
+      submitBtn.innerHTML = originalBtnText;
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = "1";
+    }
   });
 }

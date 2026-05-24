@@ -304,10 +304,17 @@ a {
   .hero-title { font-size: 2.75rem; }
   .hero { padding: 4rem 0; }
   .section { padding: 4rem 0; }
+  .section-title { font-size: 2.25rem; }
   .footer-grid { grid-template-columns: 1fr; gap: 3rem; }
   .form-row { grid-template-columns: 1fr; gap: 0; }
   .product-detail-layout { gap: 2rem; }
   .detail-img-box { padding: 2rem; }
+  
+  /* Trust strip fix 2x2 */
+  .trust-strip-container { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; justify-items: center; }
+  .trust-item { flex-direction: column; align-items: center; text-align: center; gap: 0.25rem; }
+  .trust-number { font-size: 2rem; }
+  .trust-label { max-width: 120px; font-size: 0.8rem; }
 }
 
 /* ==========================================================================
@@ -500,7 +507,25 @@ a {
 }
 
 @media (max-width: 768px) {
-  .slide-title { font-size: 2rem; }
-  .hero-slider { height: 60vh; min-height: 450px; }
+  .slide-title { font-size: 2.25rem; }
+  .hero-slider { height: 75vh; min-height: 500px; }
   .category-grid { grid-template-columns: 1fr; }
+  
+  /* Make overlay gradient bottom-up for mobile */
+  .slide-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.1) 100%);
+    align-items: flex-end;
+    padding-bottom: 4rem;
+  }
+  .slide-content {
+    padding-left: 0;
+    padding: 0 1.5rem;
+    max-width: 100%;
+    text-align: center;
+  }
+  .slider-nav {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 1.5rem;
+  }
 }

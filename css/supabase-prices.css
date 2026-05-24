@@ -1,0 +1,28 @@
+/* Supabase catalog + public price polish */
+.product-price-line,
+.detail-price-line {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.85rem 0 1rem;
+}
+
+.product-price-line span,
+.detail-price-line span {
+  font-family: var(--font-title, inherit);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+
+.detail-price-line span {
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+}
+
+.product-price-line small,
+.detail-price-line small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
