@@ -40,6 +40,7 @@ function cleanProductName(name = "", sku = "", brand = "") {
   let text = String(name || "").replace(/\s+/g, " ").trim();
   if (!text) return sku || "Equipo de seguridad";
   text = text
+    .replace(/\[[^\]]+\]/g, "")
     .replace(/^SISTEMA\s+/i, "")
     .replace(/\bPARA\s+SISTEMAS?\b.*$/i, "")
     .replace(/\bCOMPATIBLE\s+CON\b.*$/i, "")
@@ -52,6 +53,12 @@ function cleanProductName(name = "", sku = "", brand = "") {
   if (words.length > 13) text = words.slice(0, 13).join(" ");
   const brandText = String(brand || "").trim();
   const skuText = String(sku || "").trim();
+  const channelMatch = text.match(/(\d+)\s*Canales?/i);
+  const typeMatch = text.match(/\b(NVR|DVR|UPS|Switch|Servidor|Monitor|Rack|C[aá]mara|Lector|Controlador)\b/i);
+  if (typeMatch && channelMatch && skuText) {
+    const type = typeMatch[1].replace(/^cámara$/i, "Cámara");
+    return `${brandText ? brandText + " " : ""}${type.toUpperCase()} ${channelMatch[1]} Canales ${skuText}`.trim();
+  }
   if (brandText && !text.toLowerCase().includes(brandText.toLowerCase())) text = `${brandText} ${text}`;
   if (skuText && !text.toLowerCase().includes(skuText.toLowerCase())) text = `${text} ${skuText}`;
   return text.trim();
@@ -139,7 +146,6 @@ async function initSofeSupabaseCatalog() {
   } catch (error) {
     console.warn("Sofe Security: usando catÃ¡logo local de respaldo.", error);
   }
-  const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
 }
 
 async function submitQuoteToSupabase(formData) {
@@ -480,6 +486,7 @@ function initProductDetail() {
     `;
     return;
   }
+  const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
   
   // Generar especificaciones tÃ©cnicas
   let specRows = "";
