@@ -3,6 +3,27 @@
 
 let SOFE_REMOTE_PRODUCTS = [];
 let SOFE_CATALOG_READY = false;
+let visibleCatalogCount = 36;
+const CATALOG_PAGE_SIZE = 36;
+const COLLECTION_PRIORITY = {
+  cctv: 1,
+  "access-control": 2,
+  vms: 3,
+  storage: 4,
+  compute: 5,
+  power: 6,
+  distribution: 7,
+  racks: 8,
+  fiber: 9,
+  cabling: 10,
+  displays: 11,
+  accessories: 99
+};
+
+function normalizeImageUrl(url) {
+  if (!url) return "";
+  return String(url).trim().replace(/^http:\/\//i, "https://");
+}
 
 function getProductsData() {
   return SOFE_REMOTE_PRODUCTS.length ? SOFE_REMOTE_PRODUCTS : PRODUCTS_DATA;
@@ -68,7 +89,7 @@ function normalizeSupabaseProduct(row) {
       "Existencia": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Por confirmar",
       "Precio publicado": formatCurrencyUSD(row.public_price_usd)
     },
-    image: row.image_url,
+    image: normalizeImageUrl(row.image_url),
     syscomUrl: row.syscom_url,
     publicPriceUsd: row.public_price_usd
   };
@@ -79,7 +100,7 @@ async function initSofeSupabaseCatalog() {
   if (!cfg?.url || !cfg?.anonKey || SOFE_CATALOG_READY) return;
   try {
     const select = "sku,brand,name,sofe_category,collection_slug,stock,incoming,image_url,syscom_url,public_price_usd";
-    const endpoint = `${cfg.url}/rest/v1/${cfg.catalogView || "sofe_security_catalog_launch"}?select=${select}&order=sofe_category.asc,name.asc&limit=500`;
+    const endpoint = `${cfg.url}/rest/v1/${cfg.catalogView || "sofe_security_catalog_launch"}?select=${select}&limit=500`;
     const response = await fetch(endpoint, {
       headers: {
         apikey: cfg.anonKey,
@@ -88,7 +109,9 @@ async function initSofeSupabaseCatalog() {
     });
     if (!response.ok) throw new Error(`Supabase catalog HTTP ${response.status}`);
     const rows = await response.json();
-    SOFE_REMOTE_PRODUCTS = rows.map(normalizeSupabaseProduct);
+    SOFE_REMOTE_PRODUCTS = rows
+      .map(normalizeSupabaseProduct)
+      .sort((a, b) => (COLLECTION_PRIORITY[a.collection] || 50) - (COLLECTION_PRIORITY[b.collection] || 50) || a.name.localeCompare(b.name, 'es'));
     SOFE_CATALOG_READY = true;
   } catch (error) {
     console.warn("Sofe Security: usando catálogo local de respaldo.", error);
@@ -313,6 +336,7 @@ function initCatalog() {
       button.classList.add("active");
       
       currentFilter = button.getAttribute("data-filter");
+      visibleCatalogCount = CATALOG_PAGE_SIZE;
       renderCatalog();
     });
   });
@@ -321,6 +345,7 @@ function initCatalog() {
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
       currentSearchQuery = e.target.value.toLowerCase().trim();
+      visibleCatalogCount = CATALOG_PAGE_SIZE;
       renderCatalog();
     });
   }
@@ -337,9 +362,11 @@ function renderCatalog() {
     const matchesFilter = currentFilter === "all" || p.collection === currentFilter;
     const matchesSearch = currentSearchQuery === "" || 
                           p.name.toLowerCase().includes(currentSearchQuery) || 
-                          p.sku.toLowerCase().includes(currentSearchQuery);
+                          p.sku.toLowerCase().includes(currentSearchQuery) ||
+                          (p.brand || "").toLowerCase().includes(currentSearchQuery);
     return matchesFilter && matchesSearch;
   });
+  const productsToRender = filteredProducts.slice(0, visibleCatalogCount);
     
   if (filteredProducts.length === 0) {
     catalogList.innerHTML = `
@@ -351,7 +378,7 @@ function renderCatalog() {
     return;
   }
   
-  filteredProducts.forEach(product => {
+  productsToRender.forEach(product => {
     const card = document.createElement("div");
     card.className = "product-card";
     
@@ -388,6 +415,20 @@ function renderCatalog() {
     
     catalogList.appendChild(card);
   });
+
+  if (filteredProducts.length > productsToRender.length) {
+    const loadMore = document.createElement("div");
+    loadMore.className = "catalog-load-more";
+    loadMore.style.gridColumn = "1 / -1";
+    loadMore.innerHTML = `
+      <button class="btn btn-secondary" type="button">Ver más productos (${filteredProducts.length - productsToRender.length} restantes)</button>
+    `;
+    loadMore.querySelector("button").addEventListener("click", () => {
+      visibleCatalogCount += CATALOG_PAGE_SIZE;
+      renderCatalog();
+    });
+    catalogList.appendChild(loadMore);
+  }
 }
 
 /* --- VISTA: DETALLE DE PRODUCTO --- */
