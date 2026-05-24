@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sofe Security - Soluciones Corporativas de Seguridad e Infraestructura</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- HEADER NAVEGACIÓN -->
+  <header class="header">
+    <div class="container nav-container">
+      <a href="index.html" class="logo-link">
+        <div class="logo-icon">S</div>
+        <span class="logo-text">SOFE SECURITY</span>
+        <span class="logo-badge">Enterprise</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link active">Inicio</a></li>
+        <li><a href="catalog.html" class="nav-link">Catálogo</a></li>
+        <li><a href="services.html" class="nav-link">Servicios</a></li>
+        <li><a href="about.html" class="nav-link">Nosotros</a></li>
+        <li><a href="contact.html" class="nav-link">Contacto</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="cart.html" class="quote-cart-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <span>Cotización</span>
+          <span class="cart-count" id="header-cart-count">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero animate-fade-in">
+    <div class="container hero-grid-layout">
+      <div class="hero-content-left">
+        <span class="hero-tagline">Vertical Enterprise de Seguridad Tecnológica</span>
+        <h1 class="hero-title">Sistemas de Seguridad Industrial e Infraestructura Crítica</h1>
+        <p class="hero-description">Suministramos ingeniería, hardware robusto de videovigilancia y redes de alto desempeño para proyectos corporativos y B2B. Diseñamos soluciones a la medida, listas para cotizar.</p>
+        <div class="hero-actions">
+          <a href="catalog.html" class="btn btn-primary">Armar Cotización Técnica</a>
+          <a href="contact.html" class="btn btn-secondary">Explorar Soluciones Enterprise</a>
+        </div>
+      </div>
+      
+      <!-- DIAGRAMA VISUAL TÉCNICO HERO (SVG PREMIUM B2B) -->
+      <div class="hero-visual-right">
+        <svg viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg" class="hero-svg-diagram">
+          <!-- Cuadrícula de fondo técnica suave -->
+          <defs>
+            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e5e5" stroke-width="0.5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+          <!-- Líneas de Conexión (Red/Fibra) limpias -->
+          <g stroke="#d2d2d7" stroke-width="1.5" class="network-lines">
+            <line x1="100" y1="100" x2="250" y2="200" stroke-dasharray="4 4"/>
+            <line x1="100" y1="300" x2="250" y2="200" stroke-dasharray="4 4"/>
+            <line x1="400" y1="100" x2="250" y2="200" stroke-dasharray="4 4"/>
+            <line x1="400" y1="300" x2="250" y2="200" stroke-dasharray="4 4"/>
+          </g>
+
+          <!-- Nodo Central (VMS Server Core) -->
+          <g transform="translate(250, 200)">
+            <circle r="36" fill="#ffffff" stroke="#1d1d1f" stroke-width="2"/>
+            <circle r="28" fill="none" stroke="#0071e3" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <text y="5" font-family="-apple-system, sans-serif" font-size="10" fill="#1d1d1f" text-anchor="middle" font-weight="600">VMS CORE</text>
+          </g>
+
+          <!-- Nodo Cámara IP (CCTV) -->
+          <g transform="translate(100, 100)">
+            <rect x="-35" y="-25" width="70" height="50" rx="4" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+            <circle cx="0" cy="-5" r="8" fill="none" stroke="#0071e3" stroke-width="1.5"/>
+            <path d="M-12 12 L12 12" stroke="#1d1d1f" stroke-width="1"/>
+            <text y="20" font-family="-apple-system, sans-serif" font-size="8" fill="#6e6e73" text-anchor="middle" font-weight="500">PTZ CAM</text>
+          </g>
+
+          <!-- Nodo Almacenamiento SAN -->
+          <g transform="translate(400, 100)">
+            <rect x="-35" y="-25" width="70" height="50" rx="4" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+            <rect x="-25" y="-12" width="50" height="4" rx="1" fill="#1d1d1f"/>
+            <rect x="-25" y="-2" width="50" height="4" rx="1" fill="#1d1d1f"/>
+            <rect x="-25" y="8" width="50" height="4" rx="1" fill="#0071e3"/>
+            <text y="20" font-family="-apple-system, sans-serif" font-size="8" fill="#6e6e73" text-anchor="middle" font-weight="500">SAN STORAGE</text>
+          </g>
+
+          <!-- Nodo Respaldo UPS (Energía) -->
+          <g transform="translate(100, 300)">
+            <rect x="-35" y="-25" width="70" height="50" rx="4" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+            <path d="M-10 -8 L5 -8 L-5 2 L10 2 L-2 12" stroke="#0071e3" stroke-width="1.5" stroke-linejoin="round"/>
+            <text y="20" font-family="-apple-system, sans-serif" font-size="8" fill="#6e6e73" text-anchor="middle" font-weight="500">UPS BACKUP</text>
+          </g>
+
+          <!-- Nodo Videowall / Control Room -->
+          <g transform="translate(400, 300)">
+            <rect x="-35" y="-25" width="70" height="50" rx="4" fill="#ffffff" stroke="#1d1d1f" stroke-width="1.5"/>
+            <g class="videowall-screens">
+              <rect x="-26" y="-14" width="22" height="12" rx="1" fill="none" stroke="#1d1d1f" stroke-width="1"/>
+              <rect x="4" y="-14" width="22" height="12" rx="1" fill="none" stroke="#1d1d1f" stroke-width="1"/>
+              <rect x="-26" y="2" width="22" height="12" rx="1" fill="none" stroke="#0071e3" stroke-width="1"/>
+              <rect x="4" y="2" width="22" height="12" rx="1" fill="none" stroke="#1d1d1f" stroke-width="1"/>
+            </g>
+            <text y="22" font-family="-apple-system, sans-serif" font-size="8" fill="#6e6e73" text-anchor="middle" font-weight="500">VIDEOWALL</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- FRANJA DE CONFIANZA / AUTORIDAD -->
+  <section class="trust-strip-section">
+    <div class="container trust-strip-container">
+      <div class="trust-item">
+        <span class="trust-number">11</span>
+        <span class="trust-label">Colecciones de Ingeniería</span>
+      </div>
+      <div class="trust-divider"></div>
+      <div class="trust-item">
+        <span class="trust-number">0ms</span>
+        <span class="trust-label">Tiempo Respaldo UPS</span>
+      </div>
+      <div class="trust-divider"></div>
+      <div class="trust-item">
+        <span class="trust-number">B2B</span>
+        <span class="trust-label">Esquema de Cotización</span>
+      </div>
+      <div class="trust-divider"></div>
+      <div class="trust-item">
+        <span class="trust-number">100%</span>
+        <span class="trust-label">Planificación por Proyecto</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PILARES DE SERVICIO -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header" style="text-align: center; margin: 0 auto 4rem auto;">
+        <span class="section-tag">Diferenciador Enterprise</span>
+        <h2 class="section-title">Ingeniería que trasciende a una cámara individual</h2>
+        <p class="section-desc">No vendemos dispositivos sueltos ni dependemos de alarmismos domésticos. Proveemos el ecosistema completo de hardware, almacenamiento de datos, energía ininterrumpida y soporte corporativo.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </div>
+          <h3 class="card-title">Respaldo y Continuidad</h3>
+          <p class="card-desc">Sistemas UPS de doble conversión en línea y tableros de distribución de energía inteligentes que garantizan 0ms de tiempo de transferencia durante fallos de red eléctrica.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+          </div>
+          <h3 class="card-title">Almacenamiento Enterprise</h3>
+          <p class="card-desc">Servidores SAN y NAS de alta densidad para grabación continua 24/7 y almacenamiento masivo redundante tolerante a fallos físicos de discos duros.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><circle cx="12" cy="17" r="2"></circle></svg>
+          </div>
+          <h3 class="card-title">Red de Datos Robusta</h3>
+          <p class="card-desc">Backbones de fibra óptica, cableado estructurado blindado y racks profesionales de comunicaciones para soportar altas tasas de flujo de información sin cuellos de botella.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENLACE RÁPIDO COLECCIONES -->
+  <section class="section" style="background: var(--bg-deep);">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Colecciones Especializadas</span>
+        <h2 class="section-title">Portafolio Tecnológico por Categorías</h2>
+        <p class="section-desc">Acceda directamente a las 11 colecciones de equipamiento e infraestructura para el diseño de su proyecto.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem;">
+        <a href="catalog.html?filter=cctv" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          <span class="cat-card-title">Videovigilancia / CCTV</span>
+        </a>
+        
+        <a href="catalog.html?filter=vms" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span class="cat-card-title">Software VMS y Analíticas</span>
+        </a>
+        
+        <a href="catalog.html?filter=storage" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span class="cat-card-title">Almacenamiento Enterprise</span>
+        </a>
+        
+        <a href="catalog.html?filter=compute" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+          <span class="cat-card-title">Workstations / Servidores</span>
+        </a>
+        
+        <a href="catalog.html?filter=power" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="6" width="18" height="12" rx="2" ry="2"/><line x1="23" y1="11" x2="23" y2="13"/><line x1="6" y1="12" x2="14" y2="12"/></svg>
+          <span class="cat-card-title">Energía y Respaldo</span>
+        </a>
+        
+        <a href="catalog.html?filter=distribution" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M12 6v6"/></svg>
+          <span class="cat-card-title">Distribución Eléctrica y Puesta a Tierra</span>
+        </a>
+        
+        <a href="catalog.html?filter=racks" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>
+          <span class="cat-card-title">Racks, Gabinetes y Organización</span>
+        </a>
+        
+        <a href="catalog.html?filter=fiber" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="cat-card-title">Fibra Óptica</span>
+        </a>
+        
+        <a href="catalog.html?filter=cabling" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><path d="M6 6h12v12H6z"/></svg>
+          <span class="cat-card-title">Cableado Estructurado (Cobre)</span>
+        </a>
+        
+        <a href="catalog.html?filter=displays" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>
+          <span class="cat-card-title">Pantallas Profesionales / Videowalls</span>
+        </a>
+        
+        <a href="catalog.html?filter=accessories" class="card category-link-card">
+          <svg class="cat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span class="cat-card-title">Accesorios y Consumibles</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="logo-link">
+            <div class="logo-icon">S</div>
+            <span class="logo-text">SOFE SECURITY</span>
+          </a>
+          <p class="footer-desc">Soluciones profesionales de videovigilancia, infraestructura de red, respaldo y energía para el sector enterprise corporativo.</p>
+        </div>
+        <div>
+          <h4 class="footer-title">Soluciones</h4>
+          <ul class="footer-links">
+            <li><a href="catalog.html?filter=cctv" class="footer-link">Videovigilancia / CCTV</a></li>
+            <li><a href="catalog.html?filter=storage" class="footer-link">Almacenamiento Enterprise</a></li>
+            <li><a href="catalog.html?filter=vms" class="footer-link">Software VMS y Analíticas</a></li>
+            <li><a href="services.html" class="footer-link">Ingeniería & Diseño</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="footer-title">Compañía</h4>
+          <ul class="footer-links">
+            <li><a href="about.html" class="footer-link">Nosotros</a></li>
+            <li><a href="contact.html" class="footer-link">Contacto</a></li>
+            <li><a href="legal.html" class="footer-link">Legal y Privacidad</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Sofe Security (Vertical Enterprise de <a href="../../../00-Holding Sofe Group/website/index.html" style="color: inherit; text-decoration: underline;">Sofe Group</a>). Todos los derechos reservados. Datos técnicos y certificaciones por confirmar.</p>
+        <p>Suministros Corporativos e Integración B2B</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/products.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
