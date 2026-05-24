@@ -1,0 +1,12 @@
+﻿node_modules/
+*.log
+.env
+.env.*
+.DS_Store
+Thumbs.db
+screenshot*.js
+screenshot*.png
+screenshot*.jpg
+fix_mobile.js
+package-lock.json
+package.json
