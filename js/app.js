@@ -1,4 +1,4 @@
-// Lógica principal de Sofe Security - Sitio B2B
+﻿// Lógica principal de Sofe Security - Sitio B2B
 // Maneja persistencia de cotizaciones en localStorage, interactividad y dinamismo en vistas
 
 let SOFE_REMOTE_PRODUCTS = [];
@@ -29,11 +29,11 @@ function getProductsData() {
   return SOFE_REMOTE_PRODUCTS.length ? SOFE_REMOTE_PRODUCTS : PRODUCTS_DATA;
 }
 
-function formatCurrencyUSD(value) {
+function formatCurrencyMXN(value) {
   if (value === null || value === undefined || value === "") return "Precio sujeto a validación";
   const n = Number(value);
   if (!Number.isFinite(n)) return "Precio sujeto a validación";
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 }).format(n);
 }
 
 function escapeHtml(value = "") {
@@ -140,7 +140,7 @@ function normalizeSupabaseProduct(row) {
       getProductRole({ collection: mapCollectionSlug(row.collection_slug, row.sofe_category), name: row.name, sku: row.sku }),
       row.stock !== null && row.stock !== undefined ? `Existencia referencial para preventa: ${row.stock}` : "Disponibilidad sujeta a validación comercial",
       row.incoming ? `Reposición en camino reportada: ${row.incoming}` : "Alternativas equivalentes disponibles bajo revisión",
-      "Precio referencial para armar solicitud B2B",
+      "Precio en MXN para armar solicitud B2B",
       "Revisión técnica antes de propuesta final"
     ],
     specifications: {
@@ -149,11 +149,11 @@ function normalizeSupabaseProduct(row) {
       "Categoría": row.sofe_category || "Sofe Security",
       "Rol en el proyecto": getProductRole({ collection: mapCollectionSlug(row.collection_slug, row.sofe_category), name: row.name, sku: row.sku }),
       "Existencia referencial": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Sujeta a validación",
-      "Precio público estimado": formatCurrencyUSD(row.public_price_usd)
+      "Precio MXN": formatCurrencyMXN(row.public_price_usd)
     },
     image: normalizeImageUrl(row.image_url),
     syscomUrl: row.syscom_url,
-    publicPriceUsd: row.public_price_usd
+    publicPriceMxn: row.public_price_usd
   };
 }
 
@@ -198,7 +198,7 @@ async function submitQuoteToSupabase(formData) {
       product_name: item.name,
       brand: item.brand || null,
       quantity: item.quantity,
-      notes: item.publicPriceUsd ? `Precio estimado web: ${formatCurrencyUSD(item.publicPriceUsd)}` : null
+      notes: item.publicPriceMxn ? `Precio web MXN: ${formatCurrencyMXN(item.publicPriceMxn)}` : null
     }))
   };
   const response = await fetch(`${cfg.url}/rest/v1/rpc/${cfg.quoteRpc || "sofe_security_submit_quote_request"}`, {
@@ -333,7 +333,7 @@ function addToCart(productId, quantity = 1, buttonElement = null) {
         brand: product.brand,
         collectionName: product.collectionName,
         image: product.image,
-        publicPriceUsd: product.publicPriceUsd,
+        publicPriceMxn: product.publicPriceMxn,
         quantity: quantity
       });
     }
@@ -513,8 +513,8 @@ function renderCatalog() {
         <span class="product-sku">${safeBrand ? safeBrand + " · " : ""}SKU: ${safeSku}</span>
         <p class="product-desc-short">${safeDesc}</p>
         <div class="product-price-line">
-          <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
-          <small>Precio público estimado · sujeto a validación técnica y comercial</small>
+          <span>${formatCurrencyMXN(product.publicPriceMxn)}</span>
+          <small></small>
         </div>
         <div class="product-card-actions">
           <a href="product.html?id=${safeId}" class="btn btn-secondary btn-sm" style="flex: 0 0 auto; width: 45%; padding: 8px 12px; font-size: 0.75rem;">Ver detalle</a>
@@ -615,8 +615,8 @@ function initProductDetail() {
         <p class="detail-desc" title="${safeOriginalName}">${escapeHtml(product.description)}</p>
 
         <div class="detail-price-line">
-          <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
-          <small>Precio referencial. La propuesta final confirma disponibilidad, IVA, logística, instalación y condiciones de garantía.</small>
+          <span>${formatCurrencyMXN(product.publicPriceMxn)}</span>
+          <small>Precio en MXN. La propuesta final confirma disponibilidad, IVA, logística, instalación y condiciones de garantía.</small>
         </div>
 
         <div class="decision-grid">
@@ -683,7 +683,7 @@ function initCartPage() {
   let subtotal = 0;
   cart.forEach(item => {
     const displayName = item.displayName || cleanProductName(item.name, item.sku, item.brand);
-    const lineTotal = Number(item.publicPriceUsd) * item.quantity;
+    const lineTotal = Number(item.publicPriceMxn) * item.quantity;
     if (Number.isFinite(lineTotal)) subtotal += lineTotal;
     const imgHtml = item.image && !item.image.includes("placeholder") 
       ? `<img class="cart-item-img" src="${item.image}" alt="${escapeHtml(displayName)}" loading="lazy" decoding="async" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\' fill=\\'%23f5f5f7\\'></svg>'">`
@@ -698,7 +698,7 @@ function initCartPage() {
               <span style="font-size: 0.7rem; color: var(--accent-secondary); text-transform: uppercase; font-weight:600; display:block; letter-spacing:0.05em;">${item.collectionName}</span>
               <span class="cart-item-name"><a href="product.html?id=${item.id}" title="${item.name}">${displayName}</a></span>
               <span class="cart-item-sku" style="display:block;">${item.brand ? item.brand + " · " : ""}SKU: ${item.sku}</span>
-              <span class="cart-item-sku" style="display:block; color: var(--text-main); font-weight:600;">${formatCurrencyUSD(item.publicPriceUsd)}</span>
+              <span class="cart-item-sku" style="display:block; color: var(--text-main); font-weight:600;">${formatCurrencyMXN(item.publicPriceMxn)}</span>
             </div>
           </div>
         </td>
@@ -745,7 +745,7 @@ function initCartPage() {
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
           <div>
             <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 0.25rem; font-weight: 600;">¿Qué ocurre después?</h4>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios mostrados son estimaciones públicas. Un ingeniero evaluará su solicitud en <strong>24-48 horas hábiles</strong>. La propuesta final incluirá validación técnica y disponibilidad. <em>(Instalación y configuración no incluidas por defecto)</em>.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Los precios mostrados están en MXN. Un ingeniero evaluará su solicitud en <strong>24-48 horas hábiles</strong>. La propuesta final incluirá validación técnica y disponibilidad. <em>(Instalación y configuración no incluidas por defecto)</em>.</p>
           </div>
         </div>
       </div>
@@ -762,7 +762,7 @@ function initCartPage() {
         </div>
         <div class="summary-row">
           <span>Subtotal referencial:</span>
-          <span>${subtotal > 0 ? formatCurrencyUSD(subtotal) : "Sujeto a validación"}</span>
+          <span>${subtotal > 0 ? formatCurrencyMXN(subtotal) : "Sujeto a validación"}</span>
         </div>
         <div class="summary-row">
           <span>Modelo de Negocio:</span>
@@ -838,7 +838,7 @@ function initQuoteForm() {
       <div style="flex:1;">
         <span style="font-weight:500; display:block; color: var(--text-main);" title="${item.name}">${displayName}</span>
         <span style="font-size:0.75rem; color:var(--text-muted); font-family: var(--font-body);">${item.brand ? item.brand + " · " : ""}SKU: ${item.sku}</span>
-        <span style="font-size:0.75rem; color:var(--text-main); font-weight:600; display:block; margin-top:2px;">${formatCurrencyUSD(item.publicPriceUsd)}</span>
+        <span style="font-size:0.75rem; color:var(--text-main); font-weight:600; display:block; margin-top:2px;">${formatCurrencyMXN(item.publicPriceMxn)}</span>
       </div>
       <div style="margin-left: 20px; font-weight:600; color:var(--text-main); background: var(--bg-deep); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-subtle);">
         x${item.quantity}
@@ -941,3 +941,4 @@ function initSpanishFormValidation() {
     field.addEventListener("change", () => field.setCustomValidity(""));
   });
 }
+
