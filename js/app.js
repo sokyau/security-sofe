@@ -1,4 +1,4 @@
-// Lógica principal de Sofe Security - Prototipo B2B
+// Lógica principal de Sofe Security - Sitio B2B
 // Maneja persistencia de cotizaciones en localStorage, interactividad y dinamismo en vistas
 
 let SOFE_REMOTE_PRODUCTS = [];
@@ -36,34 +36,64 @@ function formatCurrencyUSD(value) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(n);
 }
 
+function escapeHtml(value = "") {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  }[char]));
+}
+
+function getProductRole(product = {}) {
+  const collection = product.collection || "";
+  const name = `${product.name || ""} ${product.sku || ""}`.toLowerCase();
+  if (name.includes("nvr")) return "Grabación y administración de video IP";
+  if (name.includes("dvr")) return "Grabación de video CCTV / híbrida";
+  if (name.includes("ptz")) return "Cobertura perimetral con movimiento y zoom";
+  if (name.includes("ups")) return "Continuidad eléctrica para equipo crítico";
+  if (collection === "access-control") return "Control de accesos, usuarios y entradas";
+  if (collection === "storage") return "Retención de evidencia y almacenamiento 24/7";
+  if (collection === "fiber" || collection === "cabling") return "Conectividad física para la red de seguridad";
+  if (collection === "racks") return "Organización y protección de infraestructura";
+  if (collection === "vms") return "Gestión centralizada, monitoreo y analítica";
+  return "Componente técnico para proyecto de seguridad";
+}
+
 function cleanProductName(name = "", sku = "", brand = "") {
   let text = String(name || "").replace(/\s+/g, " ").trim();
-  if (!text) return sku || "Equipo de seguridad";
+  const skuText = String(sku || "").trim();
+  const brandText = String(brand || "").trim();
+  if (!text) return skuText || "Equipo de seguridad";
+
   text = text
     .replace(/\[[^\]]+\]/g, "")
     .replace(/^SISTEMA\s+/i, "")
-    .replace(/\bPARA\s+SISTEMAS?\b.*$/i, "")
-    .replace(/\bCOMPATIBLE\s+CON\b.*$/i, "")
-    .replace(/\bINCLUYE\b.*$/i, "")
+    .replace(/\b(PARA|COMPATIBLE CON|INCLUYE|CON INCLUYE)\b.*$/i, "")
     .replace(/\s*\/\s*/g, " / ")
+    .replace(/\s*\|\s*/g, " ")
+    .replace(/\s+-\s+/g, " ")
     .trim();
-  const parts = text.split(/\s+-\s+|\s+\|\s+|,\s+/).filter(Boolean);
-  if (parts.length > 1) text = parts.slice(0, 2).join(" ");
-  const words = text.split(" ");
-  if (words.length > 13) text = words.slice(0, 13).join(" ");
-  const brandText = String(brand || "").trim();
-  const skuText = String(sku || "").trim();
-  const channelMatch = text.match(/(\d+)\s*Canales?/i);
-  const typeMatch = text.match(/\b(NVR|DVR|UPS|Switch|Servidor|Monitor|Rack|C[aá]mara|Lector|Controlador)\b/i);
-  if (typeMatch && channelMatch && skuText) {
-    const type = typeMatch[1].replace(/^cámara$/i, "Cámara");
-    return `${brandText ? brandText + " " : ""}${type.toUpperCase()} ${channelMatch[1]} Canales ${skuText}`.trim();
-  }
+
+  const typeMatch = text.match(/\b(NVR|DVR|UPS|Switch|Servidor|Monitor|Rack|Gabinete|C[aá]mara|PTZ|Lector|Controlador|Disco Duro|Cable|Patch Panel|Fuente)\b/i);
+  const megapixel = text.match(/(\d+(?:\.\d+)?)\s*(MP|Megap[ií]xel)/i);
+  const channels = text.match(/(\d+)\s*Canales?/i);
+  const core = [];
+  if (brandText) core.push(brandText);
+  if (typeMatch) core.push(typeMatch[1].replace(/cámara/i, "Cámara"));
+  if (channels) core.push(`${channels[1]} Canales`);
+  if (megapixel) core.push(`${megapixel[1]} MP`);
+  if (skuText) core.push(skuText);
+
+  if (core.length >= 3) return core.join(" ").replace(/\s+/g, " ").trim();
+
+  const words = text.split(" ").filter(Boolean);
+  if (words.length > 10) text = words.slice(0, 10).join(" ");
   if (brandText && !text.toLowerCase().includes(brandText.toLowerCase())) text = `${brandText} ${text}`;
   if (skuText && !text.toLowerCase().includes(skuText.toLowerCase())) text = `${text} ${skuText}`;
   return text.trim();
 }
-
 function mapCollectionSlug(slug, categoryName = "") {
   const map = {
     "videovigilancia-cctv": "cctv",
@@ -105,18 +135,20 @@ function normalizeSupabaseProduct(row) {
     displayName,
     sku: row.sku,
     brand: row.brand || "",
-    description: `${row.brand ? row.brand + " · " : ""}Modelo ${row.sku}. Producto disponible para propuesta técnica y cotización B2B.`,
+    description: `${displayName} se integra dentro de una propuesta B2B con validación de compatibilidad, disponibilidad, accesorios e instalación según sitio.`,
     features: [
-      row.stock !== null && row.stock !== undefined ? `Existencia referencial: ${row.stock}` : "Existencia sujeta a validación",
-      row.incoming ? `En camino: ${row.incoming}` : "Disponibilidad sujeta a validación comercial",
-      "Precio público estimado para solicitud B2B",
+      getProductRole({ collection: mapCollectionSlug(row.collection_slug, row.sofe_category), name: row.name, sku: row.sku }),
+      row.stock !== null && row.stock !== undefined ? `Existencia referencial para preventa: ${row.stock}` : "Disponibilidad sujeta a validación comercial",
+      row.incoming ? `Reposición en camino reportada: ${row.incoming}` : "Alternativas equivalentes disponibles bajo revisión",
+      "Precio referencial para armar solicitud B2B",
       "Revisión técnica antes de propuesta final"
     ],
     specifications: {
       "Marca": row.brand || "Marca no especificada",
       "Modelo / SKU": row.sku,
       "Categoría": row.sofe_category || "Sofe Security",
-      "Existencia": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Sujeta a validación",
+      "Rol en el proyecto": getProductRole({ collection: mapCollectionSlug(row.collection_slug, row.sofe_category), name: row.name, sku: row.sku }),
+      "Existencia referencial": row.stock !== null && row.stock !== undefined ? String(row.stock) : "Sujeta a validación",
       "Precio público estimado": formatCurrencyUSD(row.public_price_usd)
     },
     image: normalizeImageUrl(row.image_url),
@@ -458,10 +490,17 @@ function renderCatalog() {
     card.className = "product-card stagger-item";
     card.style.animationDelay = `${(index % 12) * 0.04}s`;
     const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
+    const safeName = escapeHtml(displayName);
+    const safeOriginalName = escapeHtml(product.name);
+    const safeCollection = escapeHtml(product.collectionName);
+    const safeSku = escapeHtml(product.sku);
+    const safeBrand = escapeHtml(product.brand || "");
+    const safeDesc = escapeHtml(product.description);
+    const safeId = encodeURIComponent(product.id);
     
     // SVG Fallback premium
     const imgHtml = product.image && !product.image.includes("placeholder") 
-      ? `<img class="product-img" src="${product.image}" alt="${displayName}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'500\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-family=\\'sans-serif\\' font-size=\\'40\\' fill=\\'%231d1d1f\\' opacity=\\'0.2\\'>SOFE SECURITY</text></svg>'">`
+      ? `<img class="product-img" src="${product.image}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'500\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-family=\\'sans-serif\\' font-size=\\'40\\' fill=\\'%231d1d1f\\' opacity=\\'0.2\\'>SOFE SECURITY</text></svg>'">`
       : `<svg class="fallback-icon" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="19" x2="12" y2="19.01"></line></svg>`;
 
     card.innerHTML = `
@@ -469,16 +508,16 @@ function renderCatalog() {
         ${imgHtml}
       </div>
       <div class="product-info">
-        <span class="product-collection-badge">${product.collectionName}</span>
-        <h3 class="product-name" title="${product.name}">${displayName}</h3>
-        <span class="product-sku">${product.brand ? product.brand + " · " : ""}SKU: ${product.sku}</span>
-        <p class="product-desc-short">${product.description}</p>
+        <span class="product-collection-badge">${safeCollection}</span>
+        <h3 class="product-name" title="${safeOriginalName}">${safeName}</h3>
+        <span class="product-sku">${safeBrand ? safeBrand + " · " : ""}SKU: ${safeSku}</span>
+        <p class="product-desc-short">${safeDesc}</p>
         <div class="product-price-line">
           <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
           <small>Precio público estimado · sujeto a validación técnica y comercial</small>
         </div>
         <div class="product-card-actions">
-          <a href="product.html?id=${product.id}" class="btn btn-secondary btn-sm" style="flex: 0 0 auto; width: 45%; padding: 8px 12px; font-size: 0.75rem;">Ver detalle</a>
+          <a href="product.html?id=${safeId}" class="btn btn-secondary btn-sm" style="flex: 0 0 auto; width: 45%; padding: 8px 12px; font-size: 0.75rem;">Ver detalle</a>
           <button class="btn btn-primary btn-sm btn-add-quote" data-id="${product.id}" style="flex: 1;">Agregar a cotización</button>
         </div>
       </div>
@@ -514,97 +553,106 @@ function initProductDetail() {
   const params = new URLSearchParams(window.location.search);
   const productId = params.get("id");
   const container = document.getElementById("product-detail-container");
-  
   if (!container) return;
-  
+
   const product = getProductsData().find(p => p.id === productId);
-  
   if (!product) {
     container.innerHTML = `
       <div class="empty-cart-state">
-        <h2 class="empty-title">Producto No Encontrado</h2>
-        <p class="empty-desc">El equipo solicitado no existe en nuestro catálogo de ingeniería.</p>
-        <a href="catalog.html" class="btn btn-primary">Volver al Catálogo</a>
-      </div>
-    `;
+        <h2 class="empty-title">Producto no encontrado</h2>
+        <p class="empty-desc">El equipo solicitado no existe en el catálogo activo. Puede regresar al catálogo o solicitar ayuda a un especialista.</p>
+        <div class="mobile-start-links">
+          <a href="catalog.html?filter=cctv">CCTV</a>
+          <a href="catalog.html?filter=access-control">Acceso</a>
+          <a href="catalog.html?filter=power">Energía</a>
+          <a href="contact.html">Especialista</a>
+        </div>
+        <a href="catalog.html" class="btn btn-primary">Volver al catálogo</a>
+      </div>`;
     return;
   }
-  const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
-  
-  // Generar especificaciones técnicas
-  let specRows = "";
-  const specs = { ...product.specifications };
-  
-  // Enriquecimiento automático de placeholders comerciales (Prioridad 1)
-  if (!specs["Garantía"] && !specs["Garantía Comercial"] && !specs["Garantía de Fábrica"]) {
-    specs["Soporte y Garantía"] = "Sujeto a póliza SLA por proyecto";
-  }
-  if (!specs["Compatibilidad"]) {
-    specs["Compatibilidad / Estándar"] = "Arquitectura abierta Enterprise / Cumplimiento EIA/TIA";
-  }
 
-  for (const [key, value] of Object.entries(specs)) {
-    specRows += `
-      <tr>
-        <td class="spec-key">${key}</td>
-        <td class="spec-val">${value}</td>
-      </tr>
-    `;
+  const displayName = product.displayName || cleanProductName(product.name, product.sku, product.brand);
+  const safeName = escapeHtml(displayName);
+  const safeOriginalName = escapeHtml(product.name);
+  const safeCollection = escapeHtml(product.collectionName);
+  const safeSku = escapeHtml(product.sku);
+  const safeBrand = escapeHtml(product.brand || "");
+  const role = escapeHtml(getProductRole(product));
+
+  const specs = { ...product.specifications };
+  if (!specs["Soporte y Garantía"] && !specs["Garantía"] && !specs["Garantía Comercial"] && !specs["Garantía de Fábrica"]) {
+    specs["Soporte y Garantía"] = "Garantía y póliza sujetas a fabricante, alcance y SLA acordado";
   }
-  
-  // Generar características viñetas
-  let featureList = "";
-  product.features.forEach(f => {
-    featureList += `<li style="margin-bottom: 0.5rem; display: flex; gap: 8px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;"><polyline points="20 6 9 17 4 12"></polyline></svg> <span>${f}</span></li>`;
-  });
-  
-  // Fallback image
+  if (!specs["Compatibilidad / Estándar"] && !specs["Compatibilidad"]) {
+    specs["Compatibilidad / Estándar"] = "Se valida contra infraestructura existente, energía, red y VMS";
+  }
+  specs["Condición comercial"] = "Precios, IVA, logística e instalación se confirman en propuesta formal";
+
+  const specRows = Object.entries(specs).map(([key, value]) => `
+    <tr>
+      <td class="spec-key">${escapeHtml(key)}</td>
+      <td class="spec-val">${escapeHtml(value)}</td>
+    </tr>`).join("");
+
+  const featureList = (product.features || []).map(f => `
+    <li><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>${escapeHtml(f)}</span></li>`).join("");
+
   const imgHtml = product.image && !product.image.includes("placeholder")
-    ? `<img class="detail-img" src="${product.image}" alt="${displayName}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'600\\' fill=\\'%23f5f5f7\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f5f5f7\\'/></svg>'">`
+    ? `<img class="detail-img" src="${product.image}" alt="${safeName}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'600\' fill=\'%23f5f5f7\'><rect width=\'100%\' height=\'100%\' fill=\'%23f5f5f7\'/></svg>'">`
     : `<svg class="detail-fallback-icon" xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="19" x2="12" y2="19.01"></line></svg>`;
 
   container.innerHTML = `
-    <div class="product-detail-layout">
-      <div class="detail-img-box">
+    <div class="product-detail-layout product-detail-premium">
+      <aside class="detail-img-box">
+        <span class="product-collection-badge detail-floating-badge">${safeCollection}</span>
         ${imgHtml}
-      </div>
+      </aside>
       <div class="detail-info">
-        <span class="detail-collection">${product.collectionName}</span>
-        <h1 class="detail-title">${displayName}</h1>
-        <span class="detail-sku">${product.brand ? product.brand + " · " : ""}SKU: ${product.sku}</span>
+        <span class="detail-collection">${safeCollection}</span>
+        <h1 class="detail-title">${safeName}</h1>
+        <span class="detail-sku">${safeBrand ? safeBrand + " · " : ""}SKU: ${safeSku}</span>
+        <p class="detail-desc" title="${safeOriginalName}">${escapeHtml(product.description)}</p>
+
         <div class="detail-price-line">
           <span>${formatCurrencyUSD(product.publicPriceUsd)}</span>
-          <small>Precio público estimado. Sujeto a validación técnica, disponibilidad, volumen e instalación.</small>
+          <small>Precio referencial. La propuesta final confirma disponibilidad, IVA, logística, instalación y condiciones de garantía.</small>
         </div>
-        <p class="detail-desc">${product.description}</p>
-        <div class="detail-actions" style="margin-bottom: 2.5rem;">
-          <button id="detail-add-btn" class="btn btn-primary" style="flex: 2;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Agregar a cotización</button>
-          <a href="quote.html" class="btn btn-secondary" style="flex: 1;">Solicitar validación</a>
+
+        <div class="decision-grid">
+          <div class="decision-card"><span>Rol</span><strong>${role}</strong></div>
+          <div class="decision-card"><span>Validación</span><strong>Compatibilidad, capacidad y alcance</strong></div>
+          <div class="decision-card"><span>Entrega</span><strong>Sujeta a inventario, volumen y logística</strong></div>
         </div>
-        
+
+        <div class="detail-actions">
+          <button id="detail-add-btn" class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Agregar a cotización</button>
+          <a href="contact.html" class="btn btn-secondary">Hablar con especialista</a>
+        </div>
+
+        <section class="product-advisory-card">
+          <h3>Antes de comprar, validamos el proyecto</h3>
+          <p>Confirmamos energía disponible, red, montaje, compatibilidad con VMS/NVR, accesorios necesarios y condiciones del sitio para evitar compras incompletas.</p>
+        </section>
+
         <div class="spec-list">
-          <h3 class="spec-title">Características del Suministro</h3>
-          <ul style="list-style:none; padding-left:0; margin-bottom: 2.5rem; color: var(--text-muted); font-size: 0.95rem;">
-            ${featureList}
-          </ul>
-          
-          <h3 class="spec-title">Ficha Técnica Operativa</h3>
-          <table class="spec-table">
-            <tbody>
-              ${specRows}
-            </tbody>
-          </table>
+          <h3 class="spec-title">Características para cotización</h3>
+          <ul class="feature-list-clean">${featureList}</ul>
+          <h3 class="spec-title">Ficha técnica comercial</h3>
+          <table class="spec-table"><tbody>${specRows}</tbody></table>
         </div>
-        <a href="catalog.html" class="btn btn-secondary">Volver al catálogo</a>
+
+        <div class="detail-bottom-actions">
+          <a href="catalog.html" class="btn btn-secondary">Volver al catálogo</a>
+          <a href="quote.html" class="btn btn-primary">Solicitar propuesta</a>
+        </div>
       </div>
-    </div>
-  `;
-  
+    </div>`;
+
   document.getElementById("detail-add-btn").addEventListener("click", (e) => {
     addToCart(product.id, 1, e.currentTarget);
   });
 }
-
 /* --- VISTA: CARRITO DE COTIZACIÓN --- */
 
 function initCartPage() {
@@ -638,7 +686,7 @@ function initCartPage() {
     const lineTotal = Number(item.publicPriceUsd) * item.quantity;
     if (Number.isFinite(lineTotal)) subtotal += lineTotal;
     const imgHtml = item.image && !item.image.includes("placeholder") 
-      ? `<img class="cart-item-img" src="${item.image}" alt="${displayName}" loading="lazy" decoding="async" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\' fill=\\'%23f5f5f7\\'></svg>'">`
+      ? `<img class="cart-item-img" src="${item.image}" alt="${escapeHtml(displayName)}" loading="lazy" decoding="async" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'60\\' height=\\'60\\' fill=\\'%23f5f5f7\\'></svg>'">`
       : `<div class="cart-item-img"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"></rect></svg></div>`;
 
     tableRows += `
@@ -656,7 +704,7 @@ function initCartPage() {
         </td>
         <td>
           <div class="cart-qty-box">
-            <button class="qty-btn qty-minus" data-id="${item.id}" aria-label="Reducir unidades">
+            <button class="qty-btn qty-minus" data-id="${item.id}" aria-label="Reducir unidades" ${item.quantity <= 1 ? "disabled" : ""}>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
             <span class="qty-input">${item.quantity}</span>
@@ -740,6 +788,8 @@ function initCartPage() {
   document.querySelectorAll(".qty-minus").forEach(btn => {
     btn.addEventListener("click", (e) => {
       const id = e.currentTarget.getAttribute("data-id");
+      const item = getCart().find(i => i.id === id);
+      if (item && item.quantity <= 1) return;
       updateQuantity(id, -1);
     });
   });
@@ -827,7 +877,9 @@ function initQuoteForm() {
       notes: [
         document.getElementById("notes").value,
         document.getElementById("site_type")?.value ? `Tipo de sitio: ${document.getElementById("site_type").value}` : "",
-        document.getElementById("location")?.value ? `Ubicación: ${document.getElementById("location").value}` : ""
+        document.getElementById("location")?.value ? `Ubicación: ${document.getElementById("location").value}` : "",
+        document.getElementById("budget_range")?.value ? `Rango de presupuesto: ${document.getElementById("budget_range").value}` : "",
+        document.getElementById("sites_count")?.value ? `Número de sitios/sedes: ${document.getElementById("sites_count").value}` : ""
       ].filter(Boolean).join("\n"),
       items: cart
     };

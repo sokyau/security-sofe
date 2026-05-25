@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Datos de Proyecto - Sofe Security</title>
-  <link rel="stylesheet" href="css/style.css?v=mobile-polish-20260524">
+  <link rel="stylesheet" href="css/style.css?v=laura-polish-20260525">
   <link rel="stylesheet" href="css/supabase-prices.css">
 </head>
 <body>
@@ -95,6 +95,24 @@
               </div>
             </div>
 
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="budget_range">Rango de presupuesto referencial</label>
+                <select class="form-select" id="budget_range">
+                  <option value="">Por definir</option>
+                  <option value="menos-5k-usd">Menos de 5,000 USD</option>
+                  <option value="5k-20k-usd">5,000 - 20,000 USD</option>
+                  <option value="20k-50k-usd">20,000 - 50,000 USD</option>
+                  <option value="50k-plus-usd">Más de 50,000 USD</option>
+                  <option value="licitacion">Depende de licitación/RFP</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="sites_count">Número de sedes / zonas</label>
+                <input class="form-input" type="text" id="sites_count" placeholder="Ej. 1 sede, 3 almacenes, 12 accesos">
+              </div>
+            </div>
+
             <div class="form-group" style="display: flex; align-items: center;">
               <div class="checkbox-group">
                 <input class="checkbox-input" type="checkbox" id="install_service" checked>
@@ -133,7 +151,7 @@
               <textarea class="form-textarea" id="notes" rows="4" placeholder="Describa particularidades de la obra: alturas, distancias de fibra, requerimientos especiales de montaje, condiciones ambientales del sitio, etc."></textarea>
             </div>
             
-            <p class="privacy-note">La información compartida es tratada bajo estrictos acuerdos de confidencialidad B2B.</p>
+            <p class="privacy-note">La información compartida se usa únicamente para dar seguimiento a su solicitud. La propuesta formal puede separar suministro, IVA, logística, instalación, configuración y soporte.</p>
 
             <div class="checkbox-group" style="margin-top: 1rem;">
               <input class="checkbox-input" type="checkbox" id="privacy_consent" required>
@@ -164,7 +182,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
               <strong>Siguiente paso</strong>
             </div>
-            <p style="margin:0;">Al enviar este formulario, un ingeniero comercial asignado a su cuenta revisará la viabilidad técnica de su solicitud y emitirá la propuesta de cotización final.</p>
+            <p style="margin:0;">Al enviar este formulario, un especialista revisará inventario, compatibilidad, alcance de instalación y condiciones comerciales. Respuesta objetivo: 24-48 horas hábiles cuando la información esté completa.</p>
           </div>
         </div>
       </div>
@@ -206,8 +224,8 @@
     </div>
   </footer>
 
-  <script src="js/products.js?v=mobile-polish-20260524"></script>
+  <script src="js/products.js?v=laura-polish-20260525"></script>
   <script src="js/supabase-config.js"></script>
-  <script src="js/app.js?v=mobile-polish-20260524"></script>
+  <script src="js/app.js?v=laura-polish-20260525"></script>
 </body>
 </html>

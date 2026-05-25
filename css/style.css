@@ -1087,7 +1087,7 @@ html, body {
     margin-bottom: 1.75rem;
   }
 
-  /* Catalog: make filters mobile-first instead of swallowing the whole page. */
+  /* Catalog: make filters mobile-first instead of swallowing the whole screen. */
   .catalog-layout {
     gap: 1.25rem !important;
   }
@@ -1269,4 +1269,44 @@ html, body {
   .success-card > div[style*="display:flex"] {
     flex-direction: column !important;
   }
+}
+
+
+/* Laura polish: conversion, trust and B2B decision sheets */
+.trust-depth-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:1.25rem; }
+.trust-depth-card, .product-advisory-card, .deliverables-band { background: var(--bg-card); border:1px solid var(--border-subtle); border-radius: var(--border-radius); padding:2rem; box-shadow: var(--shadow-premium); }
+.trust-depth-card span { color: var(--accent-secondary); font-weight:700; font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+.trust-depth-card h3 { margin:.75rem 0 .5rem; font-size:1.2rem; }
+.trust-depth-card p, .product-advisory-card p, .deliverables-band p { color: var(--text-muted); line-height:1.55; }
+.outcome-section { background: var(--bg-deep); border-top:1px solid var(--border-subtle); border-bottom:1px solid var(--border-subtle); }
+.outcome-layout { display:grid; grid-template-columns: 1.1fr .9fr; gap:3rem; align-items:center; }
+.outcome-checklist { display:grid; gap:.75rem; }
+.outcome-checklist div, .deliverables-list span { background:#fff; border:1px solid var(--border-subtle); border-radius:999px; padding:.85rem 1rem; font-weight:600; color:var(--text-main); }
+.product-detail-premium .detail-img-box { border:1px solid var(--border-subtle); overflow:hidden; }
+.detail-floating-badge { position:absolute; top:1rem; left:1rem; z-index:2; background:rgba(255,255,255,.92); }
+.decision-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:.75rem; margin:1.5rem 0 1.75rem; }
+.decision-card { background:var(--bg-deep); border:1px solid var(--border-subtle); border-radius:18px; padding:1rem; }
+.decision-card span { display:block; color:var(--text-muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.35rem; }
+.decision-card strong { font-size:.9rem; line-height:1.25; }
+.feature-list-clean { list-style:none; padding:0; margin:0 0 2.5rem; color:var(--text-muted); }
+.feature-list-clean li { display:flex; gap:.55rem; margin-bottom:.65rem; line-height:1.45; }
+.feature-list-clean svg { flex-shrink:0; margin-top:2px; }
+.product-advisory-card { margin:0 0 2rem; background:linear-gradient(135deg,#fff,var(--bg-deep)); }
+.product-advisory-card h3 { font-size:1.1rem; margin-bottom:.5rem; }
+.detail-bottom-actions { display:flex; gap:1rem; flex-wrap:wrap; }
+.deliverables-band { margin-top:4rem; display:grid; grid-template-columns: .9fr 1.1fr; gap:2rem; align-items:center; }
+.deliverables-list { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:.75rem; }
+.cat-card-desc-mini { color:var(--text-muted); font-size:.86rem; margin:.45rem 0 0; line-height:1.35; }
+.qty-minus[disabled] { opacity:.35; cursor:not-allowed; }
+@media (max-width: 900px) {
+  .trust-depth-grid, .outcome-layout, .deliverables-band { grid-template-columns:1fr; }
+  .decision-grid { grid-template-columns:1fr; }
+  .deliverables-list { grid-template-columns:1fr; }
+}
+@media (max-width: 768px) {
+  .trust-depth-card, .product-advisory-card, .deliverables-band { padding:1.25rem; border-radius:20px; }
+  .outcome-layout { gap:1.25rem; }
+  .outcome-checklist div, .deliverables-list span { border-radius:18px; font-size:.9rem; }
+  .detail-title { font-size: clamp(2rem, 8vw, 2.5rem); }
+  .detail-actions, .detail-bottom-actions { flex-direction:column; }
 }
