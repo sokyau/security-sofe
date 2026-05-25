@@ -33,7 +33,7 @@ function formatCurrencyMXN(value) {
   if (value === null || value === undefined || value === "") return "Precio sujeto a validación";
   const n = Number(value);
   if (!Number.isFinite(n)) return "Precio sujeto a validación";
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 }).format(n);
+  return `MXN ${new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 }).format(n)}`;
 }
 
 function escapeHtml(value = "") {
@@ -941,4 +941,5 @@ function initSpanishFormValidation() {
     field.addEventListener("change", () => field.setCustomValidity(""));
   });
 }
+
 
